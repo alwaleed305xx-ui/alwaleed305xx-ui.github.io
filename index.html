@@ -3,78 +3,97 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>مُنتقى | نختار لك الأفضل — واطلبه من المتجر الرسمي</title>
-<meta name="description" content="مُنتقى — دليل التسوق الذكي في السعودية: نفلتر أفضل المنتجات المطلوبة ونوصلك مباشرة لأفضل عرض في أمازون السعودية وعلي إكسبرس ونون.">
+<title>مُنتقى | أفضل منتجات أمازون السعودية — منتقاة بعناية</title>
+<meta name="description" content="مُنتقى — نفلتر أفضل المنتجات المطلوبة في السعودية ونوصلك مباشرة لصفحة الشراء في أمازون السعودية. ترند تيك توك، ركن القهوة، الكشتات وأكثر.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Alexandria:wght@500;600;700;800&family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Alexandria:wght@400;500;600;700;800;900&family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛍️</text></svg>">
 </head>
 <body>
 
-<!-- شريط علوي -->
+<div class="bg-glow" aria-hidden="true"></div>
+
+<!-- شريط إعلان -->
 <div class="topbar">
-  <span>🔎 نفلتر آلاف المنتجات ونختار لك الأعلى تقييماً — وتطلبها بأمان من <b>المتاجر الرسمية</b></span>
+  <div class="topbar-track">
+    <span>⚡ نختار لك الأعلى تقييماً فقط</span><i>✦</i>
+    <span>🛒 اشترِ بأمان من أمازون السعودية</span><i>✦</i>
+    <span>🔥 قسم الترند يتحدث أسبوعياً</span><i>✦</i>
+    <span>💳 مدى · أبل باي · الدفع عند الاستلام</span><i>✦</i>
+    <span>⚡ نختار لك الأعلى تقييماً فقط</span><i>✦</i>
+    <span>🛒 اشترِ بأمان من أمازون السعودية</span><i>✦</i>
+    <span>🔥 قسم الترند يتحدث أسبوعياً</span><i>✦</i>
+    <span>💳 مدى · أبل باي · الدفع عند الاستلام</span><i>✦</i>
+  </div>
 </div>
 
 <!-- الهيدر -->
 <header class="header" id="header">
   <div class="container header-inner">
     <a href="#" class="logo" aria-label="مُنتقى">
-      <svg viewBox="0 0 48 48" class="logo-mark" aria-hidden="true">
-        <rect x="6" y="14" width="36" height="28" rx="7" fill="var(--primary)"/>
-        <path d="M16 14v-3a8 8 0 0 1 16 0v3" fill="none" stroke="var(--gold)" stroke-width="3.5" stroke-linecap="round"/>
-        <path d="M16 27l6 6 11-11" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
-      <span class="logo-text">مُنتقى<small>نختار لك الأفضل</small></span>
+      <span class="logo-mark">🛍️</span>
+      <span class="logo-text">مُنتقى<small>MUNTAQA · SA</small></span>
     </a>
-
     <nav class="nav" id="nav">
       <a href="#home" class="active">الرئيسية</a>
+      <a href="#trend">الترند 🔥</a>
       <a href="#cats">الأقسام</a>
-      <a href="#best">الأكثر طلباً</a>
       <a href="#products">المنتجات</a>
       <a href="#faq">الأسئلة</a>
     </nav>
-
     <div class="header-actions">
       <div class="search-box">
-        <svg viewBox="0 0 24 24" width="18" height="18"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"/><path d="M21 21l-4.3-4.3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-        <input type="search" id="searchInput" placeholder="ابحث عن منتج…" aria-label="بحث">
+        <svg viewBox="0 0 24 24" width="17" height="17"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"/><path d="M21 21l-4.3-4.3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        <input type="search" id="searchInput" placeholder="وش تدور اليوم؟" aria-label="بحث">
       </div>
-      <button class="cart-btn" id="favBtn" aria-label="المفضلة">
-        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8Z"/></svg>
-        <span class="cart-count" id="favCount">0</span>
+      <button class="fav-btn" id="favBtn" aria-label="المفضلة">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8Z"/></svg>
+        <span class="fav-count" id="favCount">0</span>
       </button>
       <button class="burger" id="burger" aria-label="القائمة"><span></span><span></span><span></span></button>
     </div>
   </div>
 </header>
 
+<!-- مسودة (تظهر لك أنت فقط عند التعديل من لوحة التحكم) -->
+<div class="draft-bar" id="draftBar" hidden>
+  📝 تشاهد <b>نسخة مسودة</b> من تعديلاتك — الزوار ما يشوفونها لين تنشرها
+  <button id="draftDiscard">تجاهل المسودة</button>
+</div>
+
 <!-- الهيرو -->
 <section class="hero" id="home">
   <div class="container hero-inner">
     <div class="hero-copy reveal">
-      <span class="hero-eyebrow">✨ الأكثر طلباً في السعودية 2026</span>
-      <h1>لا تدور بين آلاف المنتجات…<br><em>منتقى</em> يختار لك الأفضل</h1>
-      <p>نتابع الأكثر مبيعاً في السوق السعودي — من ركن القهوة إلى عدة الكشتة — ونوصلك بضغطة وحدة لأفضل عرض في أمازون السعودية وعلي إكسبرس ونون. تشتري من المتجر الرسمي بكل ضماناته.</p>
+      <span class="hero-eyebrow"><i></i> الأكثر طلباً في السعودية 2026</span>
+      <h1>منتجات تستاهل،<br>مو <em>زحمة خيارات</em></h1>
+      <p>نغربل آلاف المنتجات في أمازون السعودية ونطلع لك الزبدة: الأعلى تقييماً، الأكثر مبيعاً، وأقوى ترندات تيك توك — بضغطة وحدة توصل لصفحة الشراء الرسمية.</p>
       <div class="hero-cta">
-        <a href="#products" class="btn btn-primary">استكشف المنتجات</a>
-        <a href="#best" class="btn btn-ghost">الأكثر طلباً</a>
+        <a href="#trend" class="btn btn-amazon">🔥 شف ترند الأسبوع</a>
+        <a href="#products" class="btn btn-ghost">تصفح الكل</a>
       </div>
       <div class="hero-stats">
-        <div><b>+300</b><span>منتج مفلتر بعناية</span></div>
-        <div><b>4.4 ★+</b><span>أقل تقييم نقبله</span></div>
-        <div><b>3 متاجر</b><span>نقارن لك بينها</span></div>
+        <div><b id="statCount">38</b><span>منتج منتقى</span></div>
+        <div class="sep"></div>
+        <div><b>4.4★+</b><span>أقل تقييم نقبله</span></div>
+        <div class="sep"></div>
+        <div><b>أمازون</b><span>شراء رسمي آمن</span></div>
       </div>
     </div>
     <div class="hero-visual reveal" aria-hidden="true">
-      <div class="hero-blob"></div>
-      <div class="float-card fc1"><span class="fc-emoji">☕</span><div><b>ماكينة قهوة محمولة</b><span>الأكثر طلباً 🔥</span></div></div>
-      <div class="float-card fc2"><span class="fc-emoji">🏕️</span><div><b>عدة الكشتة كاملة</b><span>جاهز للبر</span></div></div>
-      <div class="float-card fc3"><span class="fc-emoji">🧿</span><div><b>مبخرة USB محمولة</b><span>عبقت المجلس</span></div></div>
-      <div class="hero-ring"></div>
+      <div class="orb"></div>
+      <div class="hero-card hc-main">
+        <span class="hc-emoji">🧊</span>
+        <b>كوب الثلج 1.2 لتر</b>
+        <span class="hc-meta">★ 4.8 · +7,350 طلب</span>
+        <span class="hc-tag">ترند 🔥</span>
+      </div>
+      <div class="hero-chip ch1"><span>🌬️</span> مروحة الرقبة</div>
+      <div class="hero-chip ch2"><span>🌌</span> بروجكتر المجرة</div>
+      <div class="hero-chip ch3"><span>☕</span> إسبريسو محمول</div>
+      <div class="hero-chip ch4"><span>📿</span> المسبحة الذكية</div>
     </div>
   </div>
 </section>
@@ -82,50 +101,43 @@
 <!-- مميزات -->
 <section class="usp">
   <div class="container usp-grid">
-    <div class="usp-item reveal"><span>🎯</span><div><b>منتقاة بعناية</b><p>نقبل فقط الأعلى تقييماً ومبيعاً</p></div></div>
-    <div class="usp-item reveal"><span>🛡️</span><div><b>شراء آمن 100%</b><p>تشتري من المتجر الرسمي مباشرة</p></div></div>
-    <div class="usp-item reveal"><span>⚖️</span><div><b>أكثر من خيار</b><p>أمازون وعلي إكسبرس ونون لكل منتج</p></div></div>
-    <div class="usp-item reveal"><span>💵</span><div><b>كل طرق الدفع</b><p>مدى وأبل باي والدفع عند الاستلام</p></div></div>
+    <div class="usp-item reveal"><span class="u-ic">🎯</span><div><b>منتقاة يدوياً</b><p>ما نضيف إلا الأعلى تقييماً ومبيعاً</p></div></div>
+    <div class="usp-item reveal"><span class="u-ic">🛒</span><div><b>شراء من أمازون مباشرة</b><p>بحسابك وضماناته وكل طرق الدفع</p></div></div>
+    <div class="usp-item reveal"><span class="u-ic">🚚</span><div><b>توصيل أمازون السريع</b><p>1-4 أيام لكل مدن المملكة</p></div></div>
+    <div class="usp-item reveal"><span class="u-ic">🔁</span><div><b>استرجاع أمازون</b><p>سياسة الإرجاع الرسمية تحميك</p></div></div>
+  </div>
+</section>
+
+<!-- الترند -->
+<section class="section" id="trend">
+  <div class="container">
+    <div class="section-head reveal">
+      <span class="sec-tag">🔥 يتحدث أسبوعياً</span>
+      <h2>ترند الأسبوع في السعودية</h2>
+      <p>المنتجات اللي كاسحة تيك توك وسناب حالياً — قبل ما يخلص المخزون</p>
+    </div>
+    <div class="countdown-row reveal">
+      <span>يتجدد الترند خلال:</span>
+      <div class="countdown" id="countdown">
+        <div><b id="cdD">0</b><span>يوم</span></div>
+        <div><b id="cdH">0</b><span>ساعة</span></div>
+        <div><b id="cdM">0</b><span>دقيقة</span></div>
+        <div><b id="cdS">0</b><span>ثانية</span></div>
+      </div>
+    </div>
+    <div class="products-grid" id="trendGrid"></div>
   </div>
 </section>
 
 <!-- الأقسام -->
-<section class="section" id="cats">
+<section class="section section-tint" id="cats">
   <div class="container">
     <div class="section-head reveal">
-      <h2>تسوّق حسب القسم</h2>
-      <p>ثمانية أقسام مبنية على الأكثر طلباً في السوق السعودي</p>
+      <span class="sec-tag">تسوّق بذكاء</span>
+      <h2>الأقسام</h2>
+      <p>مبنية على أكثر النيشات طلباً في السوق السعودي</p>
     </div>
     <div class="cats-grid" id="catsGrid"></div>
-  </div>
-</section>
-
-<!-- الأكثر طلباً -->
-<section class="section section-alt" id="best">
-  <div class="container">
-    <div class="section-head reveal">
-      <h2>الأكثر طلباً 🔥</h2>
-      <p>المنتجات اللي ما تطيح من قوائم الأكثر مبيعاً</p>
-    </div>
-    <div class="products-grid" id="bestGrid"></div>
-  </div>
-</section>
-
-<!-- بانر عرض -->
-<section class="offer">
-  <div class="container offer-inner reveal">
-    <div class="offer-copy">
-      <span class="offer-tag">ترند الأسبوع ⚡</span>
-      <h3>ركن القهوة المختصة</h3>
-      <p>أدوات القهوة أكثر قسم يرتفع طلبه في المملكة — شف مختاراتنا قبل تنتهي العروض</p>
-    </div>
-    <div class="countdown" id="countdown">
-      <div><b id="cdD">0</b><span>يوم</span></div>
-      <div><b id="cdH">0</b><span>ساعة</span></div>
-      <div><b id="cdM">0</b><span>دقيقة</span></div>
-      <div><b id="cdS">0</b><span>ثانية</span></div>
-    </div>
-    <a href="#products" class="btn btn-gold" id="offerBtn">شف مختارات القهوة</a>
   </div>
 </section>
 
@@ -133,8 +145,9 @@
 <section class="section" id="products">
   <div class="container">
     <div class="section-head reveal">
+      <span class="sec-tag">المجموعة الكاملة</span>
       <h2>كل المنتجات</h2>
-      <p>الأسعار تقريبية وتتحدث في المتجر الرسمي لحظة الطلب</p>
+      <p>الأسعار تقريبية — السعر النهائي والعروض تشوفها في أمازون لحظة الطلب</p>
     </div>
     <div class="toolbar reveal">
       <div class="chips" id="filterChips"></div>
@@ -150,63 +163,59 @@
   </div>
 </section>
 
-<!-- آراء الزوار -->
-<section class="section section-alt" id="reviews">
+<!-- آراء -->
+<section class="section section-tint" id="reviews">
   <div class="container">
     <div class="section-head reveal">
+      <span class="sec-tag">تجارب حقيقية</span>
       <h2>وش قالوا زوارنا؟</h2>
-      <p>ناس مثلك ملّوا من الدوران ولقوا طلبهم من أول ضغطة</p>
     </div>
     <div class="reviews-grid">
       <figure class="review reveal">
         <div class="stars">★★★★★</div>
-        <blockquote>كنت أدور ماكينة قهوة محمولة لي أسبوع بين المتاجر. من هنا ضغطت زر واحد ولقيتها بأفضل سعر في أمازون وطلبتها بنفس اللحظة.</blockquote>
+        <blockquote>كنت أدور ماكينة قهوة محمولة لي أسبوع. من هنا ضغطت زر واحد ولقيت نفسي على صفحتها في أمازون وطلبتها بنفس اللحظة.</blockquote>
         <figcaption><b>عبدالله م.</b><span>الرياض</span></figcaption>
       </figure>
       <figure class="review reveal">
         <div class="stars">★★★★★</div>
-        <blockquote>أحب إن كل منتج له خيارين: أمازون إذا أبيه بكرة، وعلي إكسبرس إذا أبي أوفر. المقارنة الجاهزة وفرت عليّ وقت وفلوس.</blockquote>
+        <blockquote>أخيراً أحد يفلتر لي الزبدة. كل منتج فتحته تقييمه فوق 4.5 فعلاً، ما حسيت إني ألعب قمار مع البائعين.</blockquote>
         <figcaption><b>سارة ع.</b><span>جدة</span></figcaption>
       </figure>
       <figure class="review reveal">
         <div class="stars">★★★★☆</div>
-        <blockquote>جهزت عدة الكشتة كاملة من قسم الرحلات: كرسي وإضاءة وترمس. كل الروابط ودتني لمنتجات تقييمها عالي فعلاً، ما طحت في منتج خايس.</blockquote>
+        <blockquote>جهزت عدة الكشتة كاملة من قسم الرحلات — كرسي وإضاءة وترمس. الشراء من أمازون نفسه فما شلت هم الضمان.</blockquote>
         <figcaption><b>فهد الحربي</b><span>القصيم</span></figcaption>
       </figure>
     </div>
   </div>
 </section>
 
-<!-- الأسئلة الشائعة -->
+<!-- الأسئلة -->
 <section class="section" id="faq">
   <div class="container faq-wrap">
     <div class="section-head reveal">
+      <span class="sec-tag">قبل تطلب</span>
       <h2>الأسئلة الشائعة</h2>
-      <p>كل اللي تبي تعرفه قبل تطلب</p>
     </div>
     <details class="faq-item reveal">
-      <summary>كيف أطلب؟ <span class="faq-icon">+</span></summary>
-      <p>اضغط «اطلب الآن» على أي منتج، وبينقلك مباشرة لصفحة المنتج في المتجر الرسمي (أمازون السعودية أو علي إكسبرس أو نون). تكمل شراءك هناك بحسابك وبطرق الدفع اللي تعودت عليها.</p>
+      <summary>كيف أشتري؟ <span class="faq-icon">+</span></summary>
+      <p>اضغط «اشترِ من أمازون» على أي منتج، وبتنتقل مباشرة لصفحة المنتج في أمازون السعودية. تكمل شراءك هناك بحسابك — بمدى أو أبل باي أو الدفع عند الاستلام.</p>
     </details>
     <details class="faq-item reveal">
       <summary>هل الشراء آمن؟ <span class="faq-icon">+</span></summary>
-      <p>نعم 100% — نحن ما نستلم أي فلوس ولا بيانات دفع. عملية الشراء كاملة تصير داخل المتجر الرسمي بكل ضماناته: حماية المشتري، الاسترجاع، وخدمة العملاء.</p>
-    </details>
-    <details class="faq-item reveal">
-      <summary>وش الفرق بين أمازون وعلي إكسبرس ونون؟ <span class="faq-icon">+</span></summary>
-      <p>أمازون السعودية ونون: توصيل سريع (1-5 أيام) ودفع عند الاستلام. علي إكسبرس: أسعار أقل بشكل ملحوظ لكن التوصيل 10-20 يوم. نعرض لك الخيارات وأنت تختار اللي يناسبك.</p>
-    </details>
-    <details class="faq-item reveal">
-      <summary>هل الأسعار المعروضة نهائية؟ <span class="faq-icon">+</span></summary>
-      <p>الأسعار عندنا تقريبية للمقارنة، والسعر النهائي هو اللي يظهر لك في المتجر الرسمي لحظة الطلب — لأن العروض والخصومات تتغير يومياً.</p>
+      <p>100% — نحن ما نستلم فلوس ولا بيانات. الشراء كامل يتم داخل أمازون السعودية الرسمي بكل ضماناته: حماية المشتري والاسترجاع وخدمة العملاء.</p>
     </details>
     <details class="faq-item reveal">
       <summary>على أي أساس تختارون المنتجات؟ <span class="faq-icon">+</span></summary>
-      <p>نتابع قوائم الأكثر مبيعاً في السوق السعودي، وما نضيف منتج إلا إذا كان تقييمه 4.4 نجوم أو أعلى وعدد طلباته مرتفع. هدفنا إنك ما تطيح في منتج سيئ أبداً.</p>
+      <p>نتابع الأكثر مبيعاً وترندات تيك توك وسناب في السوق السعودي، وما نضيف منتج إلا إذا تقييمه 4.4★ أو أعلى وطلباته مرتفعة. هدفنا إنك ما تطيح في منتج سيئ أبداً.</p>
+    </details>
+    <details class="faq-item reveal">
+      <summary>هل الأسعار المعروضة نهائية؟ <span class="faq-icon">+</span></summary>
+      <p>الأسعار عندنا تقريبية للمقارنة — السعر النهائي هو اللي في صفحة أمازون لحظة الطلب، لأن العروض تتغير يومياً (وأحياناً تلقاه أرخص 😉).</p>
     </details>
     <details class="faq-item reveal">
       <summary>هل تربحون من الموقع؟ <span class="faq-icon">+</span></summary>
-      <p>بكل شفافية: نعم، نحصل على عمولة تسويق بسيطة من المتجر نفسه إذا اشتريت عبر روابطنا — <b>بدون أي زيادة على سعرك إطلاقاً</b>. أنت تدفع نفس السعر، والمتجر يعطينا حصة من أرباحه مقابل التوصية.</p>
+      <p>بشفافية: نعم، أمازون يعطينا عمولة تسويق بسيطة إذا اشتريت عبر روابطنا — <b>بدون أي زيادة على سعرك إطلاقاً</b>. أنت تدفع نفس السعر بالضبط.</p>
     </details>
   </div>
 </section>
@@ -215,31 +224,24 @@
 <footer class="footer">
   <div class="container footer-grid">
     <div class="footer-brand">
-      <a href="#" class="logo">
-        <svg viewBox="0 0 48 48" class="logo-mark" aria-hidden="true">
-          <rect x="6" y="14" width="36" height="28" rx="7" fill="var(--gold)"/>
-          <path d="M16 14v-3a8 8 0 0 1 16 0v3" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round"/>
-          <path d="M16 27l6 6 11-11" fill="none" stroke="var(--ink)" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-        <span class="logo-text">مُنتقى<small>نختار لك الأفضل</small></span>
-      </a>
-      <p>دليل تسوق سعودي يفلتر لك أفضل المنتجات المطلوبة ويوصلك مباشرة لأفضل عرض في المتاجر الرسمية.</p>
+      <a href="#" class="logo"><span class="logo-mark">🛍️</span><span class="logo-text">مُنتقى<small>MUNTAQA · SA</small></span></a>
+      <p>دليل تسوق سعودي يفلتر لك أفضل منتجات أمازون السعودية — عشان وقتك أغلى من التمشيط بين آلاف الخيارات.</p>
     </div>
     <div>
       <h4>روابط سريعة</h4>
+      <a href="#trend">ترند الأسبوع</a>
       <a href="#cats">الأقسام</a>
-      <a href="#best">الأكثر طلباً</a>
       <a href="#products">كل المنتجات</a>
       <a href="#faq">الأسئلة الشائعة</a>
     </div>
     <div>
-      <h4>نوصلك إلى</h4>
+      <h4>الشراء يتم عبر</h4>
       <a href="https://www.amazon.sa" target="_blank" rel="noopener">أمازون السعودية</a>
       <a href="https://ar.aliexpress.com" target="_blank" rel="noopener">علي إكسبرس</a>
       <a href="https://www.noon.com/saudi-ar/" target="_blank" rel="noopener">نون</a>
     </div>
     <div>
-      <h4>الدفع في المتاجر الرسمية</h4>
+      <h4>الدفع في المتجر الرسمي</h4>
       <div class="pay-badges">
         <span>مدى</span><span>Apple Pay</span><span>Visa</span><span>Mastercard</span><span>تمارا</span><span>تابي</span><span>عند الاستلام</span>
       </div>
@@ -247,36 +249,34 @@
   </div>
   <div class="footer-bottom">
     <div class="container">
-      <span>© 2026 مُنتقى — جميع الحقوق محفوظة</span>
-      <span>إفصاح: قد نحصل على عمولة من المتاجر عند الشراء عبر روابطنا، بدون أي تكلفة إضافية عليك</span>
+      <span>© 2026 مُنتقى — جميع الحقوق محفوظة · <a href="admin.html" class="admin-link">⚙</a></span>
+      <span>إفصاح: بصفتنا شريك أمازون، نربح من عمليات الشراء المؤهلة — بدون أي تكلفة إضافية عليك</span>
     </div>
   </div>
 </footer>
 
 <!-- درج المفضلة -->
 <div class="drawer-backdrop" id="drawerBackdrop"></div>
-<aside class="cart-drawer" id="favDrawer" aria-label="المفضلة">
+<aside class="fav-drawer" id="favDrawer" aria-label="المفضلة">
   <div class="drawer-head">
     <h3>مفضلتي <span id="drawerCount"></span></h3>
     <button class="icon-btn" id="closeDrawer" aria-label="إغلاق">✕</button>
   </div>
   <div class="drawer-items" id="drawerItems"></div>
-  <div class="drawer-foot">
-    <p class="drawer-note">💡 احفظ اللي يعجبك هنا، واطلبه من متجرك المفضل وقت ما تبي — مفضلتك محفوظة بجهازك</p>
-  </div>
+  <p class="drawer-note">محفوظة بجهازك — ارجع لها وقت ما تبي 💛</p>
 </aside>
 
 <!-- نافذة المنتج -->
 <div class="modal-backdrop" id="modalBackdrop">
-  <div class="modal" id="productModal" role="dialog" aria-modal="true">
+  <div class="modal" role="dialog" aria-modal="true">
     <button class="icon-btn modal-close" id="closeModal" aria-label="إغلاق">✕</button>
     <div class="modal-body" id="modalBody"></div>
   </div>
 </div>
 
-<!-- تنبيهات -->
 <div class="toast-wrap" id="toastWrap"></div>
 
+<script src="products.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
