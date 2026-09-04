@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>لوحة تحكم مُنتقى</title>
+<title>لوحة تحكم SAW</title>
 <meta name="robots" content="noindex">
 <link href="https://fonts.googleapis.com/css2?family=Alexandria:wght@500;700;900&family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
 <style>
@@ -117,7 +117,7 @@ label{font-size:.82rem;color:var(--muted);font-weight:700;display:block;margin-b
 <body>
 <div class="wrap">
   <div class="top">
-    <h1>⚙ لوحة تحكم <span>مُنتقى</span></h1>
+    <h1>⚙ لوحة تحكم <span>SAW</span></h1>
     <div class="grow"></div>
     <a class="btn btn-line" href="index.html">👁 معاينة الموقع</a>
     <button class="btn btn-line" id="importBtn">📥 استيراد ملف</button>
@@ -350,7 +350,7 @@ $('resetBtn').addEventListener('click', () => {
 /* ═══ تصدير products.js جاهز للنشر ═══ */
 $('exportBtn').addEventListener('click', () => {
   const body = 'window.STORE = ' + JSON.stringify(data, null, 2) + ';\n';
-  const blob = new Blob(['/* مُنتقى — بيانات المتجر (مولد من لوحة التحكم) */\n' + body], { type: 'text/javascript' });
+  const blob = new Blob(['/* SAW — بيانات المتجر (مولد من لوحة التحكم) */\n' + body], { type: 'text/javascript' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
   a.download = 'products.js';
