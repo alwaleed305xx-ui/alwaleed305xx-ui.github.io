@@ -1,14 +1,11 @@
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
 /// واجهة اللعبة كاملة: كشف الدور، شريط الأحداث، لوحة المهمة،
 /// عداد المهام، وسهم الضجة حق الوحش.
-///
-/// طريقة التركيب: Canvas واحد بالمشهد وحط عليه هذا السكربت،
-/// واربط العناصر من الـ Inspector (الأسماء توضح كل شي).
+/// أداة التجهيز (قائمة Sayeh بالأعلى) تبنيها وتربطها تلقائياً.
 /// </summary>
 public class GameUI : MonoBehaviour
 {
@@ -32,7 +29,7 @@ public class GameUI : MonoBehaviour
     public Text taskCounterText;
 
     [Header("سهم الضجة — يطلع للوحش فقط")]
-    public RectTransform noiseArrow;   // صورة سهم بنص الشاشة
+    public RectTransform noiseArrow;
     public Text noiseLabelText;
 
     [Header("نهاية الجولة")]
@@ -50,7 +47,13 @@ public class GameUI : MonoBehaviour
         if (taskPanel != null) taskPanel.SetActive(false);
         if (gameOverPanel != null) gameOverPanel.SetActive(false);
         if (noiseArrow != null) noiseArrow.gameObject.SetActive(false);
-        if (eventText != null) eventText.text = "";
+        Set(eventText, "");
+    }
+
+    // كل النصوص تمر من مصحح العربية (شوف ArabicText.cs)
+    static void Set(Text t, string s)
+    {
+        if (t != null) t.text = ArabicText.Fix(s);
     }
 
     // ───── كشف الدور ─────
@@ -59,9 +62,9 @@ public class GameUI : MonoBehaviour
     {
         if (rolePanel == null) return;
         rolePanel.SetActive(true);
-        roleText.text = iAmMonster
+        Set(roleText, iAmMonster
             ? "أنت الوحش!! 🧟\nكُل عيال... بس أول خلهم ينتشرون"
-            : "أنت من العيال! 🏃\nخلصوا المهام واهربوا... وحاول ما تصايح 🤫";
+            : "أنت من العيال! 🏃\nخلصوا المهام واهربوا... وحاول ما تصايح 🤫");
         StartCoroutine(HideAfter(rolePanel, 4f));
     }
 
@@ -82,27 +85,24 @@ public class GameUI : MonoBehaviour
 
     IEnumerator EventRoutine(string msg)
     {
-        eventText.text = msg;
+        Set(eventText, msg);
         yield return new WaitForSeconds(4f);
-        eventText.text = "";
+        Set(eventText, "");
     }
 
     // ───── لوحة المهمة ─────
 
-    public void ShowTaskPanel(string name, string desc)
+    public void ShowTaskPanel(string taskTitle, string desc)
     {
         if (taskPanel == null) return;
         taskPanel.SetActive(true);
-        taskNameText.text = name;
-        taskDescText.text = desc + "\n\n[Q] للهروب من المهمة";
-        taskHintText.text = "";
-        taskProgressBar.value = 0;
+        Set(taskNameText, taskTitle);
+        Set(taskDescText, desc + "\n\n[Q] للهروب من المهمة");
+        Set(taskHintText, "");
+        if (taskProgressBar != null) taskProgressBar.value = 0;
     }
 
-    public void ShowTaskHint(string hint)
-    {
-        if (taskHintText != null) taskHintText.text = hint;
-    }
+    public void ShowTaskHint(string hint) => Set(taskHintText, hint);
 
     public void UpdateTaskProgress(float t)
     {
@@ -115,11 +115,8 @@ public class GameUI : MonoBehaviour
         ShowEvent(closingMsg);
     }
 
-    public void UpdateTaskCounter(int donecount, int total)
-    {
-        if (taskCounterText != null)
-            taskCounterText.text = "المهام: " + donecount + "/" + total;
-    }
+    public void UpdateTaskCounter(int doneCount, int total)
+        => Set(taskCounterText, "المهام: " + doneCount + "/" + total);
 
     // ───── سهم الضجة (للوحش) ─────
 
@@ -128,7 +125,7 @@ public class GameUI : MonoBehaviour
         lastNoisePos = worldPos;
         // الضجة الأقوى تظل على الشاشة أطول
         noiseShowUntil = Time.time + Mathf.Lerp(1.5f, 5f, loudness);
-        if (noiseLabelText != null) noiseLabelText.text = label;
+        Set(noiseLabelText, label);
         if (noiseArrow != null) noiseArrow.gameObject.SetActive(true);
     }
 
@@ -138,6 +135,7 @@ public class GameUI : MonoBehaviour
         if (Time.time > noiseShowUntil)
         {
             noiseArrow.gameObject.SetActive(false);
+            if (noiseLabelText != null) Set(noiseLabelText, "");
             return;
         }
 
@@ -158,7 +156,7 @@ public class GameUI : MonoBehaviour
     {
         if (gameOverPanel == null) return;
         gameOverPanel.SetActive(true);
-        gameOverText.text = (survivorsWon ? "🎉 فوز العيال!\n" : "🧟 فوز الوحش!\n") + msg;
+        Set(gameOverText, (survivorsWon ? "🎉 فوز العيال!\n" : "🧟 فوز الوحش!\n") + msg);
         Cursor.lockState = CursorLockMode.None;
     }
 }
