@@ -58,13 +58,18 @@ public static class ScreamerSetupWizard
         "CellarDoorAnchor"
     };
 
+    enum MapKind { House, Forest, Terrain }
+
     [MenuItem("Screamer/Build Everything")]
-    public static void BuildEverything() => BuildEverythingCore(forestMap: false);
+    public static void BuildEverything() => BuildEverythingCore(MapKind.House);
 
     [MenuItem("Screamer/Build Everything (Forest Map)")]
-    public static void BuildEverythingForest() => BuildEverythingCore(forestMap: true);
+    public static void BuildEverythingForest() => BuildEverythingCore(MapKind.Forest);
 
-    static void BuildEverythingCore(bool forestMap)
+    [MenuItem("Screamer/Build Everything (Dead Hills Terrain)")]
+    public static void BuildEverythingTerrain() => BuildEverythingCore(MapKind.Terrain);
+
+    static void BuildEverythingCore(MapKind map)
     {
         // Never silently throw away someone's open scene work.
         if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
@@ -84,10 +89,39 @@ public static class ScreamerSetupWizard
 
         try
         {
-            Step(0.05f, forestMap ? "Growing the Whispering Woods..." : "Building the Henderson House...");
+            Step(0.05f, map == MapKind.House ? "Building the Henderson House..."
+                : map == MapKind.Forest ? "Growing the Whispering Woods..."
+                : "Raising the Dead Hills...");
             var mapRoot = new GameObject("Map");
-            if (forestMap) ForestFactory.BuildAll(mapRoot.transform, mat);
-            else HouseFactory.BuildAll(mapRoot.transform, mat);
+            switch (map)
+            {
+                case MapKind.Forest:
+                    ForestFactory.BuildAll(mapRoot.transform, mat);
+                    break;
+
+                case MapKind.Terrain:
+                {
+                    // The heightmap must be an asset to survive scene saves;
+                    // the factory builds it, the wizard persists it.
+                    TerrainData data = TerrainFactory.CreateData();
+                    string dataPath = Root + "/TerrainData_DeadHills.asset";
+                    AssetDatabase.DeleteAsset(dataPath);
+                    AssetDatabase.CreateAsset(data, dataPath);
+                    foreach (TerrainLayer layer in data.terrainLayers)
+                    {
+                        if (layer == null) continue;
+                        if (layer.diffuseTexture != null)
+                            AssetDatabase.AddObjectToAsset(layer.diffuseTexture, data);
+                        AssetDatabase.AddObjectToAsset(layer, data);
+                    }
+                    TerrainFactory.BuildAll(mapRoot.transform, mat, data);
+                    break;
+                }
+
+                default:
+                    HouseFactory.BuildAll(mapRoot.transform, mat);
+                    break;
+            }
 
             Step(0.25f, "Building pawn prefabs...");
             GameObject survivorPrefab = SavePawnPrefab(CharacterFactory.BuildSurvivorPawn(mat), "Survivor");
@@ -132,7 +166,9 @@ public static class ScreamerSetupWizard
         }
 
         EditorUtility.DisplayDialog("SCREAMER",
-            "Everything is built on " + (forestMap ? "the Whispering Woods (forest map)" : "the Henderson House") + ".\n\n" +
+            "Everything is built on " + (map == MapKind.House ? "the Henderson House"
+                : map == MapKind.Forest ? "the Whispering Woods (forest map)"
+                : "the Dead Hills (terrain map)") + ".\n\n" +
             "Scene: " + ScenePath + "\n" +
             "Prefabs: " + PrefabsFolder + "\n\n" +
             "Press Play, HOST GAME, READY UP, START ROUND.\n" +

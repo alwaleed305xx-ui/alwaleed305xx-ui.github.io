@@ -82,6 +82,8 @@ public static class ScreamerAssetInstaller
         int skins = InstallMonsterSkins(report);
         int props = InstallSceneProps(report);
         int widgets = InstallUgsWidgets(report);
+        int layers = PaintTerrain(report);
+        if (layers > 0) report.Add("OK   terrain repainted with " + layers + " imported layer(s).");
 
         Debug.Log("SCREAMER asset install report:\n  " + string.Join("\n  ", report));
 
@@ -202,6 +204,65 @@ public static class ScreamerAssetInstaller
             EditorSceneManager.SaveScene(anchors.gameObject.scene);
         }
         return installed;
+    }
+
+    // ------------------------- Terrain repaint (terrain sample pack) -------------------------
+
+    /// <summary>
+    /// Repaints the Dead Hills terrain with imported TerrainLayer assets
+    /// (the terrain sample pack ships several): first layer everywhere,
+    /// second layer on steep slopes. No terrain in the scene, or no layers
+    /// imported yet, is a reported no-op.
+    /// </summary>
+    static int PaintTerrain(List<string> report)
+    {
+        Terrain terrain = Object.FindObjectOfType<Terrain>();
+        if (terrain == null)
+        {
+            report.Add("SKIP terrain paint: this map has no terrain (Dead Hills only).");
+            return 0;
+        }
+
+        var layers = new List<TerrainLayer>();
+        foreach (string guid in AssetDatabase.FindAssets("t:TerrainLayer"))
+        {
+            string path = AssetDatabase.GUIDToAssetPath(guid);
+            if (Excluded(path)) continue;
+            var layer = AssetDatabase.LoadAssetAtPath<TerrainLayer>(path);
+            if (layer != null && layer.diffuseTexture != null) layers.Add(layer);
+            if (layers.Count == 4) break;
+        }
+
+        if (layers.Count == 0)
+        {
+            report.Add("MISS terrain paint: no imported TerrainLayer assets found yet.");
+            return 0;
+        }
+
+        TerrainData data = terrain.terrainData;
+        data.terrainLayers = layers.ToArray();
+
+        if (layers.Count > 1)
+        {
+            int res = data.alphamapResolution;
+            var alpha = new float[res, res, layers.Count];
+            for (int z = 0; z < res; z++)
+            {
+                for (int x = 0; x < res; x++)
+                {
+                    float nx = x / (float)(res - 1);
+                    float nz = z / (float)(res - 1);
+                    bool steep = data.GetSteepness(nx, nz) > 18f;
+                    alpha[z, x, 0] = steep ? 0f : 1f;
+                    alpha[z, x, 1] = steep ? 1f : 0f;
+                }
+            }
+            data.SetAlphamaps(0, 0, alpha);
+        }
+
+        EditorUtility.SetDirty(data);
+        AssetDatabase.SaveAssets();
+        return layers.Count;
     }
 
     // ------------------------- UGS building-block widgets -------------------------

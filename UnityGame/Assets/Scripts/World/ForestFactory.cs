@@ -62,7 +62,7 @@ public static class ForestFactory
 
     // ------------------------- Treelines (the walls, but alive) -------------------------
 
-    static void BuildTreelines(Transform root, Func<string, Color, Material> mat)
+    internal static void BuildTreelines(Transform root, Func<string, Color, Material> mat)
     {
         Transform trees = Group(root, "Treelines");
 
@@ -158,7 +158,7 @@ public static class ForestFactory
 
     // ------------------------- Clearing dressing (pure decoration) -------------------------
 
-    static void BuildClearingDressing(Transform root, Func<string, Color, Material> mat)
+    internal static void BuildClearingDressing(Transform root, Func<string, Color, Material> mat)
     {
         Transform dressing = Group(root, "Dressing");
 
@@ -238,7 +238,7 @@ public static class ForestFactory
 
     // ------------------------- Campfire and slappable stumps -------------------------
 
-    static void BuildCampfireAndStumps(Transform root, Func<string, Color, Material> mat)
+    internal static void BuildCampfireAndStumps(Transform root, Func<string, Color, Material> mat)
     {
         Transform props = Group(root, "Props");
 
@@ -285,7 +285,7 @@ public static class ForestFactory
 
     // ------------------------- Backdrop cabins (asset attachment points) -------------------------
 
-    static void BuildBackdropCabins(Transform root, Func<string, Color, Material> mat)
+    internal static void BuildBackdropCabins(Transform root, Func<string, Color, Material> mat)
     {
         Transform cabins = Group(root, "BackdropCabins");
 
@@ -318,7 +318,7 @@ public static class ForestFactory
 
     // ------------------------- Anchors (GDD section 13, forest edition) -------------------------
 
-    static void BuildAnchors(Transform root)
+    internal static void BuildAnchors(Transform root)
     {
         var anchorsObject = new GameObject("MapAnchors");
         anchorsObject.transform.SetParent(root, false);
@@ -372,7 +372,7 @@ public static class ForestFactory
         QualitySettings.shadowDistance = 60f;
     }
 
-    static void BuildLightsAndDirectors(Transform root, Func<string, Color, Material> mat)
+    internal static void BuildLightsAndDirectors(Transform root, Func<string, Color, Material> mat)
     {
         Transform lights = Group(root, "Lights");
 
