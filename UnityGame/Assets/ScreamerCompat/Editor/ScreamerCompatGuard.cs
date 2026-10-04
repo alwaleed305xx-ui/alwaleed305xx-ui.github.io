@@ -176,7 +176,9 @@ public static class ScreamerCompatGuard
 
         EditorApplication.delayCall += () =>
         {
-            if (ParkFailures(files, verbose: false))
+            bool changed = ApplyVersionRules(verbose: false);
+            changed |= ParkFailures(files, verbose: false);
+            if (changed)
             {
                 SessionState.SetInt(PassKey, passes + 1);
                 AssetDatabase.Refresh();
