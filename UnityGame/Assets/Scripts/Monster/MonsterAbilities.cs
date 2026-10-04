@@ -5,13 +5,13 @@ using UnityEngine;
 /// <summary>
 /// The per-skin monster ability on [F] (Hide &amp; Shriek update, GDD 14.1).
 /// One key, three monsters, three personalities:
-/// - ZOMBIE — LUNGE: a 0.45 s forward burst (+9 speed) on an 8 s cooldown.
+/// - ZOMBIE - LUNGE: a 0.45 s forward burst (+9 speed) on an 8 s cooldown.
 ///   The lunge grunt is a REAL loudness 0.45 noise at the monster's position,
-///   so nearby survivors see the ring — you trade stealth for the bite.
-/// - MUTANT — ROAR: every living survivor within 16 units yelps
-///   involuntarily — a real loudness 0.5 ping AT THEIR POSITION, relayed to
+///   so nearby survivors see the ring - you trade stealth for the bite.
+/// - MUTANT - ROAR: every living survivor within 16 units yelps
+///   involuntarily - a real loudness 0.5 ping AT THEIR POSITION, relayed to
 ///   the monster through the normal hearing pipe. Wallhack by comedy, 25 s.
-/// - MIMIC — [F] belongs to MimicDisguise; this component stays silent.
+/// - MIMIC - [F] belongs to MimicDisguise; this component stays silent.
 /// This component also owns the monster's closet interaction: [E] on a
 /// HideSpot opens it (and flushes out whoever thought a closet was a plan).
 ///
@@ -184,7 +184,7 @@ public class MonsterAbilities : NetworkBehaviour
         if (!ServerValidateAbility(MonsterSkinSelector.SkinMutant)) return;
         abilityReadyServerTime.Value = Now + roarCooldown;
 
-        // Everyone close enough yelps — a real ping at each victim's position,
+        // Everyone close enough yelps - a real ping at each victim's position,
         // pushed through the normal hearing pipe (culling included).
         var affected = new List<ulong>();
         foreach (IVictim victim in ServerCollectVictims())
@@ -213,7 +213,7 @@ public class MonsterAbilities : NetworkBehaviour
 
     static IEnumerable<IVictim> ServerCollectVictims()
     {
-        // Humans first (cheap registry), then bot pawns — the MimicDisguise pattern.
+        // Humans first (cheap registry), then bot pawns - the MimicDisguise pattern.
         foreach (PlayerController pc in PlayerController.All)
             if (pc != null) yield return pc;
         foreach (NetworkBehaviour nb in FindObjectsOfType<NetworkBehaviour>())

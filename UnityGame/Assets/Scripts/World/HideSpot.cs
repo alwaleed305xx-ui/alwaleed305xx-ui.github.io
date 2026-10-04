@@ -5,12 +5,12 @@ using UnityEngine;
 /// <summary>
 /// A hideable closet (Hide &amp; Shriek update, GDD 14.2). A survivor can step
 /// inside and pull the doors shut; the doors are real geometry, so they hide
-/// by honestly blocking line of sight — no invisibility tricks. The monster
+/// by honestly blocking line of sight - no invisibility tricks. The monster
 /// (or a helpful friend) can open the closet from outside, which flushes the
 /// occupant out with an involuntary yelp ping.
 ///
 /// The closed-closet prompt is identical whether the closet is empty or
-/// occupied — the same no-free-detector rule as the furniture slap prompt.
+/// occupied - the same no-free-detector rule as the furniture slap prompt.
 ///
 /// Built by HideSpotFactory as an in-scene placed NetworkObject; occupancy and
 /// door state are server-authoritative. Entering, leaving and getting flushed
