@@ -203,7 +203,7 @@ public static class ScreamerUIStyle
         Stretch(plate.rectTransform);
         plate.raycastTarget = true;
 
-        Text text = Header(plate, "Label", label, Mathf.Max(14, (int)(size.y * 0.42f)), ScreamerPalette.InkBlack, TextAnchor.MiddleCenter);
+        Text text = Header(plate.transform, "Label", label, Mathf.Max(14, (int)(size.y * 0.42f)), ScreamerPalette.InkBlack, TextAnchor.MiddleCenter);
         Stretch(text.rectTransform);
 
         Button button = plate.gameObject.AddComponent<Button>();
