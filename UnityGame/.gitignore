@@ -1,0 +1,17 @@
+# Unity - generated files that never belong in version control
+/[Ll]ibrary/
+/[Tt]emp/
+/[Oo]bj/
+/[Bb]uild/
+/[Bb]uilds/
+/[Ll]ogs/
+/[Uu]ser[Ss]ettings/
+*.csproj
+*.sln
+*.pidb
+*.booproj
+*.svd
+*.userprefs
+.vs/
+.idea/
+crashlytics-build.properties
