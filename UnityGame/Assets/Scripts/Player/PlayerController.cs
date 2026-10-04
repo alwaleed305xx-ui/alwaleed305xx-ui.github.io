@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
@@ -36,6 +37,9 @@ public class PlayerController : NetworkBehaviour, IVictim
     public float slapCooldown = 0.8f;
     [Range(0f, 1f)] public float slapLoudness = 0.45f;
 
+    [Header("Rubber chicken decoy (GDD 14.3)")]
+    public float decoyThrowRange = 12f;
+
     [Header("Rig references (wired by CharacterFactory)")]
     public Transform cameraHolder;
     public Transform readyArm;
@@ -65,6 +69,9 @@ public class PlayerController : NetworkBehaviour, IVictim
     /// <summary>One Boo per ghost per round; the server flips this when it is spent.</summary>
     public NetworkVariable<bool> BooSpent = new NetworkVariable<bool>(false);
 
+    /// <summary>One rubber-chicken decoy per survivor per round ([G], GDD 14.3).</summary>
+    public NetworkVariable<bool> DecoySpent = new NetworkVariable<bool>(false);
+
     // Server-written: true once caught OR escaped. Replicated so late joiners see ghosts correctly.
     readonly NetworkVariable<bool> ghost = new NetworkVariable<bool>(false);
 
@@ -81,6 +88,9 @@ public class PlayerController : NetworkBehaviour, IVictim
 
     /// <summary>Tasks lock movement while the player works (and panics).</summary>
     public bool InputLocked { get; set; }
+
+    /// <summary>The closet this pawn is hiding in; null in the open (GDD 14.2).</summary>
+    public HideSpot CurrentHideSpot { get; private set; }
 
     // ------------------------- IVictim -------------------------
 
@@ -181,12 +191,17 @@ public class PlayerController : NetworkBehaviour, IVictim
             case GameManager.GameState.Playing:
             case GameManager.GameState.Finale:
                 Look();
-                if (!InputLocked)
+                if (CurrentHideSpot != null)
+                {
+                    HandleHiddenInput(); // doors shut, nerves fraying, [E] to leave
+                }
+                else if (!InputLocked)
                 {
                     Move(emitNoise: true);
                     UpdatePrompt();
                     HandleInteractInput();
                     HandleSlapInput();
+                    HandleDecoyInput();
                 }
                 else ClearPrompt();
                 break;
@@ -287,6 +302,10 @@ public class PlayerController : NetworkBehaviour, IVictim
             {
                 prompt = PromptEscape;
             }
+            else if (hit.collider.GetComponentInParent<HideSpot>() is HideSpot spot)
+            {
+                prompt = spot.PromptFor(this);
+            }
             else if (hit.distance <= slapRange && IsSlappable(hit))
             {
                 // Identical prompt for real furniture and the disguised Mimic --
@@ -323,7 +342,97 @@ public class PlayerController : NetworkBehaviour, IVictim
         if (task != null) { task.TryStart(this); return; }
 
         EscapeDoor door = hit.collider.GetComponentInParent<EscapeDoor>();
-        if (door != null) door.TryEscape(this);
+        if (door != null) { door.TryEscape(this); return; }
+
+        HideSpot spot = hit.collider.GetComponentInParent<HideSpot>();
+        if (spot != null) spot.RequestInteract();
+    }
+
+    // ------------------------- hide & shriek: closets (GDD 14.2) -------------------------
+
+    void HandleHiddenInput()
+    {
+        SetPrompt(GameCopy.PromptLeaveCloset);
+        if (Input.GetKeyDown(KeyCode.E) && CurrentHideSpot != null)
+            CurrentHideSpot.RequestInteract();
+    }
+
+    /// <summary>Occupant's owner client only: HideSpot snaps the pawn inside.</summary>
+    public void EnterHideSpot(HideSpot spot, Vector3 insideWorldPos)
+    {
+        if (!IsOwner || IsGhost || spot == null) return;
+        CurrentHideSpot = spot;
+        if (cc != null) cc.enabled = false; // the closet shell is the collider now
+        transform.position = insideWorldPos;
+        UpdateSprintFeel(false);
+        ClearPrompt();
+    }
+
+    /// <summary>Occupant's owner client only: leave (or get flushed out of) the closet.</summary>
+    public void ExitHideSpot(Vector3 exitWorldPos)
+    {
+        if (!IsOwner || CurrentHideSpot == null) return;
+        CurrentHideSpot = null;
+        transform.position = exitWorldPos;
+        if (cc != null && !IsGhost) cc.enabled = true;
+        ClearPrompt();
+    }
+
+    // ------------------------- hide & shriek: the decoy (GDD 14.3) -------------------------
+
+    void HandleDecoyInput()
+    {
+        if (!Input.GetKeyDown(KeyCode.G) || DecoySpent.Value || cameraHolder == null) return;
+
+        // Aim where the crosshair looks; walls catch the bird honestly.
+        Vector3 origin = cameraHolder.position;
+        Vector3 dir = cameraHolder.forward;
+        Vector3 target = Physics.Raycast(origin, dir, out RaycastHit hit, decoyThrowRange,
+                Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore)
+            ? hit.point - dir * 0.4f
+            : origin + dir * decoyThrowRange;
+        target.y = Mathf.Max(0.25f, target.y);
+
+        ThrowDecoyServerRpc(target);
+    }
+
+    /// <summary>
+    /// The decoy's noise is ENVIRONMENTAL (actor id ulong.MaxValue) and wears the
+    /// real chicken's label, so the monster cannot tell the liar from the task
+    /// chicken - and nobody farms LOUDEST HUMAN with a toy.
+    /// </summary>
+    // SECURITY: client-picked landing spot (private-lobby trust model, GDD 8.2).
+    [ServerRpc]
+    void ThrowDecoyServerRpc(Vector3 target)
+    {
+        if (ghost.Value || DecoySpent.Value || !IsHuntState()) return;
+        float maxSq = decoyThrowRange * decoyThrowRange * 4f; // lenient: camera offset + lag
+        if ((target - transform.position).sqrMagnitude > maxSq) return;
+
+        DecoySpent.Value = true;
+        StartCoroutine(ServerDecoySqueaks(target));
+        DecoyClientRpc(transform.position + Vector3.up * 1.2f, target);
+    }
+
+    IEnumerator ServerDecoySqueaks(Vector3 at)
+    {
+        yield return new WaitForSeconds(DecoyChicken.FlightSeconds);
+        for (int i = 0; i < DecoyChicken.SqueakCount; i++)
+        {
+            if (!IsHuntState()) yield break; // the round ended; the bird can stop lying
+            if (NoiseSystem.Instance != null)
+                NoiseSystem.Instance.ServerMakeNoise(ulong.MaxValue, at, DecoyChicken.SqueakLoudness,
+                    NoiseType.Chicken, GameCopy.NoiseChicken);
+            yield return new WaitForSeconds(DecoyChicken.SqueakInterval);
+        }
+    }
+
+    [ClientRpc]
+    void DecoyClientRpc(Vector3 from, Vector3 to)
+    {
+        DecoyChicken.Spawn(from, to);
+        if (IsOwner && GagFeedback.Instance != null)
+            GagFeedback.Instance.Popup(GameCopy.PopupDecoyThrown, ScreamerPalette.ScreamYellow);
     }
 
     void HandleSlapInput()

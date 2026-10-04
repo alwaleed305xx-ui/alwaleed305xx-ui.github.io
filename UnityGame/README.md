@@ -155,3 +155,18 @@ Docs/                    GDD.md (design), PLAN.md (architecture), STEAM.md
 New chores are one `TaskBase` subclass each - see any task in `Assets/Scripts/Tasks/` for the pattern.
 
 Have fun. Try to stay quiet. You won't.
+
+## Content Drop 1 — Hide & Shriek
+
+- **Per-skin monster abilities on [F]**: Zombie LUNGE (0.45 s burst, 8 s cd,
+  makes a real noise ring), Mutant ROAR (everyone within 16 units yelps a real
+  ping at their own position, 25 s cd). The Mimic keeps BECOME FURNITURE.
+- **Hideable closets**: the bedroom screaming-closet alcove got doors, and a
+  wardrobe appeared in the garage. `[E]` to hide; the monster can yank it open
+  and flush you out with a yelp. Every door touch makes noise.
+- **Rubber chicken decoy on [G]** (one per round): lands, squeaks three times,
+  and its pings are indistinguishable from the real task chicken's.
+
+New scripts: `Monster/MonsterAbilities`, `World/HideSpot`,
+`World/HideSpotFactory`, `Feel/DecoyChicken`. The setup wizard builds the
+closets automatically (Screamer > Build Everything). Full spec: GDD section 14.

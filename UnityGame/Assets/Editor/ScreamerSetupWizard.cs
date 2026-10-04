@@ -92,6 +92,9 @@ public static class ScreamerSetupWizard
             TaskBase[] tasks = TaskFactory.BuildAllStations(tasksRoot.transform, mat);
             EscapeDoor cellarDoor = TaskFactory.BuildCellarDoor(tasksRoot.transform, mat);
 
+            Step(0.50f, "Building the hide-and-shriek closets...");
+            HideSpotFactory.BuildAll(mapRoot.transform, mat);
+
             Step(0.55f, "Building network and round-flow managers...");
             RoundFlowFactory.BuildNetworkAndManagers(survivorPrefab, monsterPrefab,
                 HouseLayout.SurvivorSpawns, HouseLayout.MonsterSpawn);

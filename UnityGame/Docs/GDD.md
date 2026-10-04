@@ -613,3 +613,47 @@ The game is fully playable, art-directed, before any import. **Art-directed prim
 - **Launch:** creator-seeded — keys to 50 mid-size co-op streamers; bots guarantee the solo reviewer a full round, a kill, a killcam, and an award.
 
 *End of document. If something isn't specified here, the answer is: warmer, louder, and the monster hears it.*
+
+---
+
+## 14. Hide & Shriek Update (post-ship content drop 1)
+
+Three systems that deepen the noise meta without touching the core loop.
+All numbers live as public fields with these defaults.
+
+### 14.1 Per-skin monster abilities — one key, three personalities ([F])
+
+| Skin | Ability | Numbers | The joke |
+|---|---|---|---|
+| ZOMBIE | **LUNGE** — forward burst | +9 speed for 0.45 s, 8 s cooldown, REAL loudness-0.45 ping at the monster | It trades stealth for the bite; survivors see the ring coming |
+| MUTANT | **ROAR** — everyone yelps | radius 16, 25 s cooldown; every living survivor in range emits a REAL loudness-0.5 ping at THEIR position | Wallhack by comedy: the roar makes you snitch on yourself |
+| MIMIC | (unchanged) | [F] remains BECOME FURNITURE | The couch needs no buffs |
+
+The cooldown clock is a replicated server-time stamp (`MonsterAbilities`), so
+the `[F] LUNGE` / `[F] ROAR` ready-prompt and server validation always agree.
+Bot monsters never use abilities (same rule as the Mimic disguise).
+
+### 14.2 Hideable closets (`HideSpot`, built by `HideSpotFactory`)
+
+Two closets: the bedroom screaming-closet alcove finally gets doors, plus a
+freestanding garage wardrobe. Honest stealth: the doors are real geometry, so
+hiding works by blocking line of sight — no invisibility.
+
+- Closed closet shows ONE uniform prompt (`[E] THE CLOSET`) whether empty or
+  occupied — the slap-prompt no-free-detector rule.
+- Survivor inside: `[E] LEAVE. BRAVELY.` Opening an occupied closet from
+  outside (monster or "friend") flushes the occupant with a REAL loudness-0.6
+  yelp, a PEEKABOO popup, and an event-feed line.
+- Every door touch is a loudness-0.3 ping labeled `A CLOSET DOOR. SUSPICIOUS.`
+  A closet is a bet, not a bunker.
+- Server-authoritative occupancy with a watchdog (caught/disconnected occupant
+  frees the closet) and a rematch reset hook on the game-state change.
+
+### 14.3 The rubber chicken decoy ([G], one per survivor per round)
+
+Throw a rubber chicken (12-unit lob, walls catch it honestly). After landing
+it squeaks 3 times, 1.1 s apart — each squeak is an ENVIRONMENTAL loudness-0.75
+chicken ping wearing the real chicken's label (`THE CHICKEN. OBVIOUSLY.`), so
+the monster cannot tell the liar from the task chicken, and nobody farms
+LOUDEST HUMAN with a toy. `DecoySpent` is a replicated per-round flag; the
+visual bird (`DecoyChicken`) is local-only cosmetics on every client.

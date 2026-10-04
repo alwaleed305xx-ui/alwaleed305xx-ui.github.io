@@ -102,6 +102,7 @@ public static class CharacterFactory
         MonsterController monster = root.AddComponent<MonsterController>();
         MonsterSkinSelector selector = root.AddComponent<MonsterSkinSelector>();
         root.AddComponent<MimicDisguise>();
+        root.AddComponent<MonsterAbilities>(); // per-skin [F] ability + closet [E] (GDD 14.1)
 
         GameObject camHolder = new GameObject("CameraHolder");
         camHolder.transform.SetParent(root.transform, false);

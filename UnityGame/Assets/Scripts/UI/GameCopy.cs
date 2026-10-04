@@ -118,6 +118,22 @@ public static class GameCopy
     public const string MimicPromptDisguise = "[F] BECOME FURNITURE";
     public const string MimicWhileDisguised = "YOU ARE A COUCH. LIVE THE COUCH.";
 
+    // Hide & Shriek update (GDD 14): skin abilities, closets, the decoy.
+    public const string NoiseYelp = "AN INVOLUNTARY YELP";
+    public const string NoiseLunge = "SOMETHING LUNGED.";
+    public const string NoiseClosetDoor = "A CLOSET DOOR. SUSPICIOUS.";
+    public const string PromptLunge = "[F] LUNGE";
+    public const string PromptRoar = "[F] ROAR";
+    public const string PromptCloset = "[E] THE CLOSET";
+    public const string PromptCloseCloset = "[E] CLOSE THE CLOSET";
+    public const string PromptLeaveCloset = "[E] LEAVE. BRAVELY.";
+    public const string PopupYelped = "YOU YELPED. UNDERSTANDABLE.";
+    public const string PopupPeekaboo = "PEEKABOO.";
+    public const string PopupDecoyThrown = "THE DECOY IS LOOSE. IT KNOWS NOTHING.";
+    public const string ClosetLabel = "THE CLOSET";
+
+    public static string EventFlushed(string n) => n + " was found in a closet. Awkward.";
+
     /// <summary>Skin intro tagline by MonsterSkinSelector index (0 zombie, 1 mutant, 2 mimic).</summary>
     public static string SkinIntro(int skinIndex)
     {
