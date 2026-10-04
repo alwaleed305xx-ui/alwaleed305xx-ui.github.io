@@ -59,7 +59,12 @@ public static class ScreamerSetupWizard
     };
 
     [MenuItem("Screamer/Build Everything")]
-    public static void BuildEverything()
+    public static void BuildEverything() => BuildEverythingCore(forestMap: false);
+
+    [MenuItem("Screamer/Build Everything (Forest Map)")]
+    public static void BuildEverythingForest() => BuildEverythingCore(forestMap: true);
+
+    static void BuildEverythingCore(bool forestMap)
     {
         // Never silently throw away someone's open scene work.
         if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
@@ -79,9 +84,10 @@ public static class ScreamerSetupWizard
 
         try
         {
-            Step(0.05f, "Building the Henderson House...");
+            Step(0.05f, forestMap ? "Growing the Whispering Woods..." : "Building the Henderson House...");
             var mapRoot = new GameObject("Map");
-            HouseFactory.BuildAll(mapRoot.transform, mat);
+            if (forestMap) ForestFactory.BuildAll(mapRoot.transform, mat);
+            else HouseFactory.BuildAll(mapRoot.transform, mat);
 
             Step(0.25f, "Building pawn prefabs...");
             GameObject survivorPrefab = SavePawnPrefab(CharacterFactory.BuildSurvivorPawn(mat), "Survivor");
@@ -126,7 +132,7 @@ public static class ScreamerSetupWizard
         }
 
         EditorUtility.DisplayDialog("SCREAMER",
-            "Everything is built.\n\n" +
+            "Everything is built on " + (forestMap ? "the Whispering Woods (forest map)" : "the Henderson House") + ".\n\n" +
             "Scene: " + ScenePath + "\n" +
             "Prefabs: " + PrefabsFolder + "\n\n" +
             "Press Play, HOST GAME, READY UP, START ROUND.\n" +

@@ -381,7 +381,8 @@ public static class HouseFactory
         directors.AddComponent<HouseMoodDirector>();
     }
 
-    static void BuildScreenFxOverlay(Transform root)
+    /// <summary>Shared with ForestFactory: both maps mount the same overlay canvas.</summary>
+    internal static void BuildScreenFxOverlay(Transform root)
     {
         var overlayObject = new GameObject("ScreenFxOverlay");
         overlayObject.transform.SetParent(root, false);

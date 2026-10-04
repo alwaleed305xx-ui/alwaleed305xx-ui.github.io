@@ -657,3 +657,21 @@ chicken ping wearing the real chicken's label (`THE CHICKEN. OBVIOUSLY.`), so
 the monster cannot tell the liar from the task chicken, and nobody farms
 LOUDEST HUMAN with a toy. `DecoySpent` is a replicated per-round flag; the
 visual bird (`DecoyChicken`) is local-only cosmetics on every client.
+
+## 15. Whispering Woods (forest map) + Auto-Install
+
+- **Forest map**: Screamer > Build Everything (Forest Map). Every HouseLayout
+  blocking rect becomes a treeline with an IDENTICAL box collider, so tasks,
+  spawns, closets, waypoints and hearing geometry carry over untouched.
+  Clearing dressing (ferns/rocks/mushrooms, deterministic seed), campfire at
+  the hearth position, lantern posts marking each chore (same event-lighting
+  roles, driven by HouseLightsDirector unchanged), slappable stumps where the
+  furniture sat, log fences, backdrop cabins past the north treeline carrying
+  MedievalBuildingAnchor1-3.
+- **Auto-Install My Assets** (Screamer menu): after importing the owned packs
+  via Package Manager > My Assets, one click finds models by name and wires
+  them: Zombie/Mutant/Mimic models into the Monster prefab skin roots (scaled
+  to pawn height, grounded, placeholders disabled not deleted) and furniture/
+  buildings onto the open scene's MapAnchors (footprint-clamped, grounded,
+  faced toward the map center). Misses are reported and stay on placeholders;
+  reruns skip anything already installed.
