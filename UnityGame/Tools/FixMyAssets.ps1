@@ -130,7 +130,19 @@ if ($major -gt 0 -and $major -lt 6000) {
     }
 }
 
-# 2. Whatever else failed in the last compile, according to Editor.log.
+# 2. Back to the Built-in render pipeline if a sample pack switched it (pink materials).
+foreach ($asset in @("ProjectSettings/GraphicsSettings.asset", "ProjectSettings/QualitySettings.asset")) {
+    if (-not (Test-Path $asset)) { continue }
+    $yaml = Get-Content $asset -Raw
+    $fixed = [regex]::Replace($yaml, '(m_CustomRenderPipeline|customRenderPipeline):\s*\{fileID:\s*\d+,\s*guid:\s*[0-9a-fA-F]+,\s*type:\s*\d+\}', '$1: {fileID: 0}')
+    if ($fixed -ne $yaml) {
+        Set-Content -Path $asset -Value $fixed -NoNewline
+        Write-Host "RESET $asset to the Built-in render pipeline (an imported pack had switched it; that is what made everything pink)."
+        $changed = $true
+    }
+}
+
+# 3. Whatever else failed in the last compile, according to Editor.log.
 $log = Join-Path $env:LOCALAPPDATA "Unity/Editor/Editor.log"
 if (Test-Path $log) {
     $lines = Get-Content $log -Tail 2500 -ErrorAction SilentlyContinue

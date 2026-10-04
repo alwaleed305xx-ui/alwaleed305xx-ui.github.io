@@ -75,7 +75,7 @@ public static class ScreamerCompatGuard
 
     static bool ApplyVersionRules(bool verbose)
     {
-        bool changed = false;
+        bool changed = EnsureBuiltInPipeline();
 #if UNITY_6000_0_OR_NEWER
         if (Directory.Exists(ParkedBlocksPath) && !Directory.Exists(BlocksPath))
         {
@@ -105,6 +105,47 @@ public static class ScreamerCompatGuard
 #endif
         if (changed) AssetDatabase.Refresh();
         else if (verbose) Debug.Log("SCREAMER compat: version rules already satisfied.");
+        return changed;
+    }
+
+    /// <summary>
+    /// SCREAMER renders with the Built-in pipeline. A sample project pack can
+    /// ship its own GraphicsSettings / QualitySettings and silently switch the
+    /// project to HDRP or URP, which turns every Standard material pink. This
+    /// puts the project back on Built-in (the pipeline packages may stay).
+    /// </summary>
+    static bool EnsureBuiltInPipeline()
+    {
+        bool changed = false;
+#if UNITY_2022_2_OR_NEWER
+        if (UnityEngine.Rendering.GraphicsSettings.defaultRenderPipeline != null)
+        {
+            UnityEngine.Rendering.GraphicsSettings.defaultRenderPipeline = null;
+            changed = true;
+        }
+#else
+        if (UnityEngine.Rendering.GraphicsSettings.renderPipelineAsset != null)
+        {
+            UnityEngine.Rendering.GraphicsSettings.renderPipelineAsset = null;
+            changed = true;
+        }
+#endif
+        int current = QualitySettings.GetQualityLevel();
+        for (int level = 0; level < QualitySettings.names.Length; level++)
+        {
+            QualitySettings.SetQualityLevel(level, false);
+            if (QualitySettings.renderPipeline == null) continue;
+            QualitySettings.renderPipeline = null;
+            changed = true;
+        }
+        QualitySettings.SetQualityLevel(current, false);
+
+        if (changed)
+        {
+            AssetDatabase.SaveAssets();
+            Debug.LogWarning("SCREAMER compat: an imported pack had switched the project to a scriptable render pipeline; " +
+                             "switched back to Built-in so the game's materials render (run Screamer > Fix Pink Materials for the pack's own).");
+        }
         return changed;
     }
 

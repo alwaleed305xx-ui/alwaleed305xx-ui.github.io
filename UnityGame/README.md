@@ -85,6 +85,7 @@ The five Unity Gaming Services building blocks (Player Account, Multiplayer Sess
 
 - `Assets/ScreamerCompat` is a stand-alone assembly that keeps loading even when everything else fails. On an editor older than Unity 6 it parks `Assets/Blocks` as `Assets/Blocks~` (ignored by Unity, nothing deleted) and drops `com.unity.services.multiplayer` from the manifest; on Unity 6 it restores both, and the F1 widget panel comes alive.
 - Any other pack script that still fails is parked as `.cs~`, and any package that fails is removed from the manifest, with a Console line per action. Rename a parked file back to undo.
+- The same guard keeps the project on the Built-in render pipeline. A sample-project pack can ship its own graphics settings and switch the project to HDRP or URP, which turns every Standard material pink; the guard switches back on load, and **Fix Pink Materials** converts the pack's own materials.
 - If the editor cannot load any new script at all, double-click **`FIX_MY_ASSETS.bat`** in the project folder (with Unity open or closed). It applies the same rules from outside Unity, reading the last compile errors from `Editor.log`.
 
 ---
