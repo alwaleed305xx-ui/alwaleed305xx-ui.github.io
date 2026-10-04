@@ -85,6 +85,8 @@ public static class ScreamerAssetInstaller
     {
         var report = new List<string>();
 
+        int materials = FixPipelineMaterials(report);
+        if (materials > 0) report.Add("OK   " + materials + " pack material(s) converted to the Standard shader.");
         int skins = InstallMonsterSkins(report);
         int props = InstallSceneProps(report);
         int widgets = InstallUgsWidgets(report);
@@ -102,6 +104,145 @@ public static class ScreamerAssetInstaller
             "Package Manager > My Assets and run this again.\n\n" +
             "Full detail is in the Console.",
             "Nice");
+    }
+
+    // ------------------------- Pipeline materials -------------------------
+
+    [MenuItem("Screamer/Fix Pink Materials")]
+    public static void FixPinkMaterials()
+    {
+        var report = new List<string>();
+        int count = FixPipelineMaterials(report);
+        Debug.Log("SCREAMER material fix:\n  " + string.Join("\n  ", report));
+        EditorUtility.DisplayDialog("Fix Pink Materials",
+            count + " material(s) converted to the Standard shader.", "OK");
+    }
+
+    static readonly string[] AlbedoProps = { "_BaseColorMap", "_BaseMap", "_MainTex", "_AlbedoMap", "_Albedo", "_DiffuseMap", "_Diffuse" };
+    static readonly string[] NormalProps = { "_NormalMap", "_BumpMap", "_Normal" };
+    static readonly string[] MaskProps = { "_MetallicGlossMap", "_MaskMap", "_MetallicMap", "_Metallic" };
+    static readonly string[] EmissionProps = { "_EmissiveColorMap", "_EmissionMap" };
+    static readonly string[] ColorProps = { "_BaseColor", "_Color" };
+
+    /// <summary>
+    /// SCREAMER renders with the Built-in pipeline, so materials that ship for
+    /// HDRP or URP (the terrain sample, some creature packs) show up pink.
+    /// This rebinds them to Standard, carrying textures and tint over from the
+    /// saved property block, which survives even when the original shader is
+    /// missing from the project.
+    /// </summary>
+    static int FixPipelineMaterials(List<string> report)
+    {
+        Shader standard = Shader.Find("Standard");
+        if (standard == null)
+        {
+            report.Add("SKIP materials: Standard shader not found.");
+            return 0;
+        }
+
+        int converted = 0;
+        foreach (string guid in AssetDatabase.FindAssets("t:Material"))
+        {
+            string path = AssetDatabase.GUIDToAssetPath(guid);
+            if (Excluded(path) || !path.StartsWith("Assets/")) continue;
+            var material = AssetDatabase.LoadAssetAtPath<Material>(path);
+            if (material == null || !NeedsPipelineFix(material)) continue;
+
+            var serialized = new SerializedObject(material);
+            Texture albedo = SavedTexture(serialized, AlbedoProps, out Vector2 scale, out Vector2 offset);
+            Texture normal = SavedTexture(serialized, NormalProps, out _, out _);
+            Texture mask = SavedTexture(serialized, MaskProps, out _, out _);
+            Texture emission = SavedTexture(serialized, EmissionProps, out _, out _);
+            Color tint = SavedColor(serialized, ColorProps, Color.white);
+
+            material.shader = standard;
+            material.SetColor("_Color", tint);
+            material.SetFloat("_Glossiness", 0.35f);
+            if (albedo != null)
+            {
+                material.SetTexture("_MainTex", albedo);
+                material.SetTextureScale("_MainTex", scale);
+                material.SetTextureOffset("_MainTex", offset);
+            }
+            if (normal != null)
+            {
+                material.SetTexture("_BumpMap", normal);
+                material.EnableKeyword("_NORMALMAP");
+            }
+            if (mask != null)
+            {
+                material.SetTexture("_MetallicGlossMap", mask);
+                material.EnableKeyword("_METALLICGLOSSMAP");
+            }
+            if (emission != null)
+            {
+                material.SetTexture("_EmissionMap", emission);
+                material.SetColor("_EmissionColor", Color.white);
+                material.EnableKeyword("_EMISSION");
+                material.globalIlluminationFlags = MaterialGlobalIlluminationFlags.RealtimeEmissive;
+            }
+
+            EditorUtility.SetDirty(material);
+            converted++;
+        }
+
+        if (converted > 0) AssetDatabase.SaveAssets();
+        else report.Add("OK   materials: nothing needed converting.");
+        return converted;
+    }
+
+    static bool NeedsPipelineFix(Material material)
+    {
+        Shader shader = material.shader;
+        if (shader == null) return true;
+        string name = shader.name;
+        return name == "Hidden/InternalErrorShader"
+            || name.StartsWith("HDRP/")
+            || name.StartsWith("Universal Render Pipeline/")
+            || name.StartsWith("Shader Graphs/");
+    }
+
+    static Texture SavedTexture(SerializedObject material, string[] names, out Vector2 scale, out Vector2 offset)
+    {
+        scale = Vector2.one;
+        offset = Vector2.zero;
+        SerializedProperty envs = material.FindProperty("m_SavedProperties.m_TexEnvs");
+        if (envs == null) return null;
+
+        foreach (string wanted in names)
+        {
+            for (int i = 0; i < envs.arraySize; i++)
+            {
+                SerializedProperty entry = envs.GetArrayElementAtIndex(i);
+                if (entry.FindPropertyRelative("first").stringValue != wanted) continue;
+                SerializedProperty value = entry.FindPropertyRelative("second");
+                var texture = value.FindPropertyRelative("m_Texture").objectReferenceValue as Texture;
+                if (texture == null) continue;
+                scale = value.FindPropertyRelative("m_Scale").vector2Value;
+                offset = value.FindPropertyRelative("m_Offset").vector2Value;
+                return texture;
+            }
+        }
+        return null;
+    }
+
+    static Color SavedColor(SerializedObject material, string[] names, Color fallback)
+    {
+        SerializedProperty colors = material.FindProperty("m_SavedProperties.m_Colors");
+        if (colors == null) return fallback;
+
+        foreach (string wanted in names)
+        {
+            for (int i = 0; i < colors.arraySize; i++)
+            {
+                SerializedProperty entry = colors.GetArrayElementAtIndex(i);
+                if (entry.FindPropertyRelative("first").stringValue != wanted) continue;
+                Color color = entry.FindPropertyRelative("second").colorValue;
+                color.a = 1f;
+                return color;
+            }
+        }
+        return fallback;
     }
 
     // ------------------------- Monster skins -------------------------

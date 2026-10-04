@@ -75,6 +75,17 @@ All project tooling lives under the **Screamer** menu:
 | **Build Windows x64** | Runs the shipped-string audit, then builds to `Builds/Windows/SCREAMER.exe` with the Steam define stripped. |
 | **Build Windows x64 (Steam)** | Runs the audit, toggles `SCREAMER_STEAM` on for the build only, builds to `Builds/WindowsSteam/SCREAMER.exe`, then restores your project defines. Requires the Steamworks SDK (see `Docs/STEAM.md`). |
 | **Audit Shipped Strings** | The release gate, runnable on demand: FAILS on any non-Latin character in shipped scripts or scenes and on references to retired legacy text helpers; WARNS on `Debug.Log` calls left in shipped code. Both build items refuse to build while the audit fails. |
+| **Auto-Install My Assets** | Wires every imported Asset Store pack into the open scene: monster skins, props on anchors, UGS widgets, terrain layers. Runs on its own at the end of Build Everything. |
+| **Fix Pink Materials** | Converts HDRP / URP materials from imported packs to the Standard shader (textures and tint carried over). Also runs inside Auto-Install. |
+| **Fix Compile Errors From Asset Packs** | Parks pack scripts and packages that cannot build on this editor (see below). Runs on its own after every failed compile. |
+
+### When an imported pack breaks compilation
+
+The five Unity Gaming Services building blocks (Player Account, Multiplayer Session, Matchmaker, Leaderboards, Achievements) are written for Unity 6 and do not compile on 2022.3. The project handles that by itself:
+
+- `Assets/ScreamerCompat` is a stand-alone assembly that keeps loading even when everything else fails. On an editor older than Unity 6 it parks `Assets/Blocks` as `Assets/Blocks~` (ignored by Unity, nothing deleted) and drops `com.unity.services.multiplayer` from the manifest; on Unity 6 it restores both, and the F1 widget panel comes alive.
+- Any other pack script that still fails is parked as `.cs~`, and any package that fails is removed from the manifest, with a Console line per action. Rename a parked file back to undo.
+- If the editor cannot load any new script at all, double-click **`FIX_MY_ASSETS.bat`** in the project folder (with Unity open or closed). It applies the same rules from outside Unity, reading the last compile errors from `Editor.log`.
 
 ---
 
