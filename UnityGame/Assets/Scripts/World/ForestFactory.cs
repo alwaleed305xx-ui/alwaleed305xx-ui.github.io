@@ -350,6 +350,11 @@ public static class ForestFactory
         Anchor(anchors, "MedievalBuildingAnchor1", new Vector3(-10f, 0f, 32.5f));
         Anchor(anchors, "MedievalBuildingAnchor2", new Vector3(1f, 0f, 33.5f));
         Anchor(anchors, "MedievalBuildingAnchor3", new Vector3(11f, 0f, 32f));
+
+        // Wasteland pack backdrop: ruins looming past the south treeline.
+        Anchor(anchors, "RuinAnchor1", new Vector3(-12f, 0f, -24f));
+        Anchor(anchors, "RuinAnchor2", new Vector3(0f, 0f, -25f));
+        Anchor(anchors, "RuinAnchor3", new Vector3(12f, 0f, -24f));
     }
 
     // ------------------------- Lighting -------------------------

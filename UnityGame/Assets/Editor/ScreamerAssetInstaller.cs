@@ -51,6 +51,27 @@ public static class ScreamerAssetInstaller
         ("MedievalBuildingAnchor1", new[] { "house", "building", "cottage", "tavern" }, 9f),
         ("MedievalBuildingAnchor2", new[] { "house", "building", "cottage", "tavern" }, 9f),
         ("MedievalBuildingAnchor3", new[] { "house", "building", "cottage", "tavern" }, 9f),
+        // The Wasteland pack: ruins past the south treeline, junk on the fence line.
+        ("RuinAnchor1", new[] { "tower", "ruin", "wall" }, 8f),
+        ("RuinAnchor2", new[] { "ruin", "building", "shack" }, 8f),
+        ("RuinAnchor3", new[] { "wall", "tower", "debris" }, 8f),
+        ("YardFenceDressingAnchor1", new[] { "rock", "debris", "cart" }, 3.5f),
+        ("YardFenceDressingAnchor2", new[] { "debris", "rock", "crate" }, 3.5f),
+        ("YardFenceDressingAnchor3", new[] { "cart", "wagon", "rock" }, 3.5f),
+        ("YardFenceDressingAnchor4", new[] { "rock", "barrel", "debris" }, 3.5f),
+    };
+
+    // Unity Gaming Services building-block widgets (Player Account, Sessions,
+    // Matchmaker, Leaderboards, Achievements). They stack on a hidden overlay
+    // canvas toggled with [F1] in Play mode; each becomes functional once the
+    // project is linked under Project Settings > Services.
+    static readonly (string label, string[] terms)[] WidgetPlan =
+    {
+        ("PlayerAccount", new[] { "sign in", "signin", "player account", "login" }),
+        ("MultiplayerSession", new[] { "create session", "join session", "session" }),
+        ("Matchmaker", new[] { "matchmaker", "matchmaking" }),
+        ("Leaderboards", new[] { "leaderboard" }),
+        ("Achievements", new[] { "achievement" }),
     };
 
     [MenuItem("Screamer/Auto-Install My Assets")]
@@ -60,11 +81,14 @@ public static class ScreamerAssetInstaller
 
         int skins = InstallMonsterSkins(report);
         int props = InstallSceneProps(report);
+        int widgets = InstallUgsWidgets(report);
 
         Debug.Log("SCREAMER asset install report:\n  " + string.Join("\n  ", report));
 
         EditorUtility.DisplayDialog("Auto-Install My Assets",
-            "Installed " + skins + " monster skin(s) and " + props + " scene prop(s).\n\n" +
+            "Installed " + skins + " monster skin(s), " + props + " scene prop(s) and " +
+            widgets + " UGS widget(s) (press F1 in Play mode; link the project under " +
+            "Project Settings > Services to make them live).\n\n" +
             "Anything not found stays on its placeholder - import the pack via " +
             "Package Manager > My Assets and run this again.\n\n" +
             "Full detail is in the Console.",
@@ -178,6 +202,78 @@ public static class ScreamerAssetInstaller
             EditorSceneManager.SaveScene(anchors.gameObject.scene);
         }
         return installed;
+    }
+
+    // ------------------------- UGS building-block widgets -------------------------
+
+    /// <summary>
+    /// Stacks every imported Unity Building Block widget on a hidden overlay
+    /// canvas ([F1] toggles it in Play mode). The blocks ship their own logic;
+    /// they go live once the project is linked under Project Settings > Services.
+    /// </summary>
+    static int InstallUgsWidgets(List<string> report)
+    {
+        int installed = 0;
+        Transform stack = null;
+
+        foreach (var plan in WidgetPlan)
+        {
+            GameObject asset = FindBestAsset(plan.terms, out string assetPath);
+            if (asset == null)
+            {
+                report.Add("MISS widget " + plan.label + ": block not imported yet (My Assets > Import).");
+                continue;
+            }
+
+            if (stack == null) stack = FindOrBuildWidgetStack();
+            if (HasNamedChild(stack, InstalledPrefix + plan.label))
+            {
+                report.Add("OK   widget " + plan.label + ": already placed.");
+                continue;
+            }
+
+            GameObject instance = Instantiate(asset, stack);
+            instance.name = InstalledPrefix + plan.label;
+            if (instance.transform is RectTransform rect)
+            {
+                rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(1f, 1f);
+                rect.anchoredPosition = new Vector2(-24f, -24f - 180f * (stack.childCount - 1));
+            }
+
+            installed++;
+            report.Add("OK   widget " + plan.label + " <- " + assetPath);
+        }
+
+        if (installed > 0)
+        {
+            EditorSceneManager.MarkSceneDirty(stack.gameObject.scene);
+            EditorSceneManager.SaveScene(stack.gameObject.scene);
+        }
+        return installed;
+    }
+
+    static Transform FindOrBuildWidgetStack()
+    {
+        GameObject existing = GameObject.Find("UgsWidgetsCanvas");
+        if (existing != null) return existing.transform;
+
+        var canvasObject = new GameObject("UgsWidgetsCanvas");
+        var canvas = canvasObject.AddComponent<Canvas>();
+        canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+        canvas.sortingOrder = 4500;
+        var scaler = canvasObject.AddComponent<UnityEngine.UI.CanvasScaler>();
+        scaler.uiScaleMode = UnityEngine.UI.CanvasScaler.ScaleMode.ScaleWithScreenSize;
+        scaler.referenceResolution = new Vector2(1920f, 1080f);
+        canvasObject.AddComponent<UnityEngine.UI.GraphicRaycaster>();
+        canvasObject.AddComponent<UgsWidgetPanelToggle>();
+        return canvasObject.transform;
+    }
+
+    static bool HasNamedChild(Transform parent, string name)
+    {
+        foreach (Transform child in parent)
+            if (child.name == name) return true;
+        return false;
     }
 
     // ------------------------- Asset search -------------------------
