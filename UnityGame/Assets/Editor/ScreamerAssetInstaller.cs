@@ -75,7 +75,13 @@ public static class ScreamerAssetInstaller
     };
 
     [MenuItem("Screamer/Auto-Install My Assets")]
-    public static void InstallEverything()
+    public static void InstallEverything() => Run(showDialog: true);
+
+    /// <summary>
+    /// The wizard calls this at the end of every Build Everything, so one
+    /// click builds the map AND dresses it with whatever packs are imported.
+    /// </summary>
+    public static void Run(bool showDialog)
     {
         var report = new List<string>();
 
@@ -86,6 +92,7 @@ public static class ScreamerAssetInstaller
         if (layers > 0) report.Add("OK   terrain repainted with " + layers + " imported layer(s).");
 
         Debug.Log("SCREAMER asset install report:\n  " + string.Join("\n  ", report));
+        if (!showDialog) return;
 
         EditorUtility.DisplayDialog("Auto-Install My Assets",
             "Installed " + skins + " monster skin(s), " + props + " scene prop(s) and " +

@@ -155,10 +155,14 @@ public static class ScreamerSetupWizard
             WireTaskManager(tasks, cellarDoor);
             VerifyAnchors();
 
-            Step(0.97f, "Saving scene and build settings...");
+            Step(0.95f, "Saving scene and build settings...");
             EditorSceneManager.SaveScene(scene, ScenePath);
             EditorBuildSettings.scenes = new[] { new EditorBuildSettingsScene(ScenePath, true) };
             AssetDatabase.SaveAssets();
+
+            // One click does it all: dress the fresh map with every imported pack.
+            Step(0.98f, "Installing imported asset packs...");
+            ScreamerAssetInstaller.Run(showDialog: false);
         }
         finally
         {
