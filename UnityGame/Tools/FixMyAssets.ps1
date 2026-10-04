@@ -7,8 +7,72 @@
 #   - packages that do not build are removed from Packages/manifest.json
 
 $ErrorActionPreference = "Continue"
-$project = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
-Set-Location $project
+$here = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
+
+function Test-UnityProject([string] $dir) {
+    return (Test-Path (Join-Path $dir "ProjectSettings/ProjectVersion.txt"))
+}
+
+# Where the files were extracted may not be the project (a desktop, a
+# downloads folder). Then find the project through Unity Hub's project list,
+# or by searching the usual places, and copy the update into it first.
+function Find-UnityProject {
+    $found = @()
+    foreach ($list in @("$env:APPDATA/UnityHub/projects-v1.json", "$env:APPDATA/UnityHub/projectDir.json")) {
+        if (-not (Test-Path $list)) { continue }
+        try {
+            $json = Get-Content $list -Raw -Encoding UTF8 | ConvertFrom-Json
+            $entries = if ($json.data) { $json.data } else { $json }
+            foreach ($prop in $entries.PSObject.Properties) {
+                $path = if ($prop.Value.path) { $prop.Value.path } else { $prop.Name }
+                if ($path -and (Test-UnityProject $path)) {
+                    $found += [pscustomobject]@{ Path = $path; Modified = [int64]($prop.Value.lastModified); Name = (Split-Path $path -Leaf) }
+                }
+            }
+        } catch { }
+    }
+    if ($found.Count -eq 0) {
+        foreach ($base in @("$env:USERPROFILE/Desktop", "$env:USERPROFILE/Documents", "$env:USERPROFILE/Downloads", "$env:USERPROFILE/OneDrive", "$env:USERPROFILE", "C:/")) {
+            if (-not (Test-Path $base)) { continue }
+            Get-ChildItem -LiteralPath $base -Directory -Recurse -Depth 4 -Filter "ProjectSettings" -ErrorAction SilentlyContinue | ForEach-Object {
+                $dir = $_.Parent.FullName
+                if ((Test-UnityProject $dir) -and (Test-Path (Join-Path $dir "Assets/Scripts/World/HouseLayout.cs"))) {
+                    $found += [pscustomobject]@{ Path = $dir; Modified = [int64]$_.LastWriteTimeUtc.Ticks; Name = $_.Parent.Name }
+                }
+            }
+            if ($found.Count -gt 0) { break }
+        }
+    }
+    if ($found.Count -eq 0) { return $null }
+    $screamer = $found | Where-Object { Test-Path (Join-Path $_.Path "Assets/Scripts/World/HouseLayout.cs") }
+    if ($screamer) { $found = @($screamer) }
+    return ($found | Sort-Object Modified -Descending | Select-Object -First 1).Path
+}
+
+$project = $here
+if (-not (Test-UnityProject $project)) {
+    Write-Host "This folder is not the Unity project; looking for it..."
+    $project = Find-UnityProject
+    if (-not $project) {
+        Write-Host "Could not find the SCREAMER Unity project. Extract SCREAMER-Update.zip into the UnityGame project folder (Unity Hub > ... > Show in Explorer) and run again."
+        exit 1
+    }
+    Write-Host "Found project: $project"
+    Write-Host "Copying the update into it..."
+    foreach ($item in @("Assets/Editor", "Assets/ScreamerCompat", "Assets/Scripts", "Tools")) {
+        $src = Join-Path $here $item
+        if (-not (Test-Path $src)) { continue }
+        $dst = Join-Path $project $item
+        New-Item -ItemType Directory -Force -Path $dst | Out-Null
+        Copy-Item -LiteralPath $src -Destination (Split-Path $dst -Parent) -Recurse -Force
+        Write-Host "COPIED $item"
+    }
+    if (Test-Path (Join-Path $here "FIX_MY_ASSETS.bat")) {
+        Copy-Item -LiteralPath (Join-Path $here "FIX_MY_ASSETS.bat") -Destination $project -Force
+    }
+}
+
+Set-Location -LiteralPath $project
 Write-Host "Project: $project"
 
 $protectedRoots = @("Assets/Scripts", "Assets/Editor", "Assets/Screamer", "Assets/ScreamerCompat")
