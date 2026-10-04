@@ -113,18 +113,32 @@ public static class ScreamerPalette
     static Shader cachedLitShader;
 
     /// <summary>
-    /// The lit shader for every code-built material. Resolution order:
-    /// URP/Lit -> HDRP/Lit -> Standard, so the project (Built-in pipeline in
-    /// v1) survives a future pipeline migration without code changes.
+    /// The lit shader for every code-built material, chosen by the pipeline
+    /// that is actually active: Standard on Built-in, URP/Lit or HDRP/Lit
+    /// when the project runs one of those. Choosing by which shaders merely
+    /// exist is wrong - an imported pack can install the HDRP package while
+    /// the project still renders Built-in, and HDRP/Lit is then pink.
     /// </summary>
     public static Shader LitShader()
     {
         if (cachedLitShader != null) return cachedLitShader;
 
-        cachedLitShader = Shader.Find("Universal Render Pipeline/Lit");
-        if (cachedLitShader == null) cachedLitShader = Shader.Find("HDRP/Lit");
+        var pipeline = UnityEngine.Rendering.GraphicsSettings.currentRenderPipeline;
+        string pipelineType = pipeline == null ? "" : pipeline.GetType().FullName;
+
+        if (pipelineType.Contains("Universal"))
+            cachedLitShader = Shader.Find("Universal Render Pipeline/Lit");
+        else if (pipelineType.Contains("HighDefinition") || pipelineType.Contains("HDRenderPipeline"))
+            cachedLitShader = Shader.Find("HDRP/Lit");
+
         if (cachedLitShader == null) cachedLitShader = Shader.Find("Standard");
         return cachedLitShader;
+    }
+
+    /// <summary>Forget the cached shader, e.g. after the pipeline changes.</summary>
+    public static void ResetShaderCache()
+    {
+        cachedLitShader = null;
     }
 
     /// <summary>

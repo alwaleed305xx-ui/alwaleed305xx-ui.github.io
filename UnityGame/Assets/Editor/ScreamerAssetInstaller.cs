@@ -144,7 +144,7 @@ public static class ScreamerAssetInstaller
         foreach (string guid in AssetDatabase.FindAssets("t:Material"))
         {
             string path = AssetDatabase.GUIDToAssetPath(guid);
-            if (Excluded(path) || !path.StartsWith("Assets/")) continue;
+            if (!path.StartsWith("Assets/")) continue; // the game's own materials included
             var material = AssetDatabase.LoadAssetAtPath<Material>(path);
             if (material == null || !NeedsPipelineFix(material)) continue;
 

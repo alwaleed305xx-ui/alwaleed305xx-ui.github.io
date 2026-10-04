@@ -71,6 +71,7 @@ public static class ScreamerSetupWizard
 
     static void BuildEverythingCore(MapKind map)
     {
+        ScreamerPalette.ResetShaderCache();
         // Never silently throw away someone's open scene work.
         if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
             return;
