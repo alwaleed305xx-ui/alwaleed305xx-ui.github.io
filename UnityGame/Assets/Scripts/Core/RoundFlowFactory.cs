@@ -33,11 +33,17 @@ public static class RoundFlowFactory
         var transport = go.AddComponent<UnityTransport>();
         transport.SetConnectionData("127.0.0.1", DefaultPort, "0.0.0.0");
 
+        // EnableSceneManagement stays at its default (true): integrated scene
+        // management is what synchronizes the in-scene defined NetworkObjects
+        // (GameManager, task stations, door, bots, killcam) to joining clients.
+        // Disabling it makes clients destroy those objects on connect, breaking
+        // JOIN GAME. The single Game scene is in Build Settings on both ends,
+        // so clients reuse the already-loaded scene; rematch still resets in
+        // place with no scene reload.
         networkManager.NetworkConfig = new NetworkConfig
         {
             NetworkTransport = transport,
-            ConnectionApproval = false,
-            EnableSceneManagement = false // one scene, rematch resets in place
+            ConnectionApproval = false
         };
 
         var bootstrap = go.AddComponent<ScreamerBootstrap>();
