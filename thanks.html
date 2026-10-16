@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>حالة الطلب | Sora Fashion</title>
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#5e2b48">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Noto+Naskh+Arabic:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/style.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%235e2b48'/%3E%3Ctext x='32' y='44' font-family='Georgia,serif' font-size='34' text-anchor='middle' fill='%23f5ede0'%3ES%3C/text%3E%3C/svg%3E">
+</head>
+<body>
+<div id="site-header"></div>
+<main class="container"><div class="center-card" id="result" aria-live="polite"><p>جاري التحقق من طلبك…</p></div></main>
+<div id="site-footer"></div>
+<script src="assets/js/garments.js"></script>
+<script src="assets/js/store.js"></script>
+<script>
+Sora.ready(async () => {
+  'use strict';
+  const S = Sora, { $, esc, I, moneyText } = S;
+  const q = new URLSearchParams(location.search);
+  const read = k => { try { return JSON.parse(sessionStorage.getItem(k) || localStorage.getItem(k) || 'null'); } catch (e) { return null; } };
+  const pending = read('sora-pending') || {};
+  const orderId = (q.get('order') || pending.orderId || '').toUpperCase();
+  const paymentId = q.get('id') || '';
+  const box = $('#result');
+
+  const success = (id, total, cod) => {
+    S.clearCart();
+    try { sessionStorage.removeItem('sora-pending'); localStorage.removeItem('sora-pending'); sessionStorage.removeItem('sora-co'); } catch (e) { /* ignore */ }
+    box.innerHTML = `<div class="ico">${I.check}</div>
+      <h1>${cod ? 'وصلنا طلبك!' : 'تم الدفع وتأكيد طلبك!'}</h1>
+      <p>${cod ? 'بنتواصل معك لتأكيد الطلب، والدفع يكون عند الاستلام.' : 'شكراً لك — بدأنا نجهّز طلبك ويوصلك رقم التتبّع أول ما يُشحن.'}</p>
+      <div class="order-no">${esc(id)}</div>
+      ${total ? `<p style="color:var(--muted)">الإجمالي: ${moneyText(total)}</p>` : ''}
+      <p style="color:var(--muted);font-size:.9rem">احفظي رقم الطلب — تقدرين تتابعينه برقم جوالك.</p>
+      <div style="display:flex;gap:.7rem;justify-content:center;flex-wrap:wrap;margin-top:1.6rem">
+        <a class="btn btn-dark" href="track.html?order=${encodeURIComponent(id)}">تتبّعي طلبك</a>
+        <a class="btn btn-line" href="index.html">كمّلي التسوّق</a>
+      </div>`;
+  };
+  const failure = msg => {
+    box.innerHTML = `<div class="ico" style="background:#fbeceb;color:var(--err)">${I.x}</div>
+      <h1>ما اكتمل الدفع</h1>
+      <p>${esc(msg || 'العملية ما تمت ولم يُخصم أي مبلغ.')}</p>
+      <p style="color:var(--muted);font-size:.9rem">سلّتك محفوظة — تقدرين تحاولين مرة ثانية ببطاقة أخرى أو Apple Pay.</p>
+      <a class="btn btn-plum" href="checkout.html" style="margin-top:1.4rem">حاولي مرة ثانية</a>`;
+  };
+
+  if (q.get('m') === 'cod' && orderId) { success(orderId, pending.total, true); return; }
+  if (!paymentId) {
+    box.innerHTML = `<h1>ما لقينا عملية دفع</h1><p>إذا كان عندك رقم طلب تقدرين تتابعينه من صفحة التتبّع.</p><a class="btn btn-dark" href="track.html" style="margin-top:1.4rem">تتبّع طلب</a>`;
+    return;
+  }
+  if (q.get('status') && q.get('status') !== 'paid') {
+    failure(q.get('message') ? `رد البنك: ${q.get('message')}` : '');
+    return;
+  }
+  let res;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try { res = await S.api('verifyPayment', { orderId, paymentId }); } catch (e) { res = { ok: false, error: e.message }; }
+    if (res && (res.ok || res.status === 'failed')) break;
+    await new Promise(r => setTimeout(r, 1500 * (attempt + 1)));
+  }
+  if (res && res.ok) success(res.orderId, res.total, false);
+  else if (res && res.error === 'amount_mismatch') failure('مبلغ الدفع ما يطابق الطلب — تواصلي معنا وبنحلها فوراً.');
+  else if (res && res.status === 'failed') failure(res.message ? `رد البنك: ${res.message}` : '');
+  else box.innerHTML = `<h1>جاري تأكيد الدفع</h1><p>ما قدرنا نتأكد من الدفع الحين — إذا انخصم المبلغ فطلبك محفوظ وبيتأكد تلقائياً خلال دقائق.</p>
+    ${orderId ? `<div class="order-no">${esc(orderId)}</div>` : ''}<a class="btn btn-dark" href="${orderId ? 'track.html?order=' + encodeURIComponent(orderId) : 'track.html'}" style="margin-top:1rem">تتبّعي الطلب</a>`;
+});
+</script>
+</body>
+</html>

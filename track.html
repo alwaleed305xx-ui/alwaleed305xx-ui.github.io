@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>تتبّع طلبك | Sora Fashion</title>
+<meta name="theme-color" content="#5e2b48">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Noto+Naskh+Arabic:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/style.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%235e2b48'/%3E%3Ctext x='32' y='44' font-family='Georgia,serif' font-size='34' text-anchor='middle' fill='%23f5ede0'%3ES%3C/text%3E%3C/svg%3E">
+</head>
+<body>
+<div id="site-header"></div>
+<main class="container">
+  <div class="center-card">
+    <div class="ico" id="trackIco"></div>
+    <h1>تتبّعي طلبك</h1>
+    <p>اكتبي رقم الطلب ورقم الجوال اللي طلبتي فيه.</p>
+    <form id="trackForm" class="co-card" style="margin-top:1.4rem;text-align:start" novalidate>
+      <div class="form-grid">
+        <div class="field"><label for="tOrder">رقم الطلب</label><input class="input" id="tOrder" placeholder="SR261016-XXXXX" dir="ltr" required maxlength="20" autocapitalize="characters"></div>
+        <div class="field"><label for="tPhone">رقم الجوال</label><input class="input" id="tPhone" type="tel" inputmode="tel" placeholder="05XXXXXXXX" dir="ltr" required maxlength="16"></div>
+      </div>
+      <button class="btn btn-dark btn-block" style="margin-top:1rem" id="tBtn">تتبّع</button>
+      <div id="tErr" class="form-error" hidden role="alert"></div>
+    </form>
+    <div id="tResult" aria-live="polite"></div>
+  </div>
+</main>
+<div id="site-footer"></div>
+<script src="assets/js/garments.js"></script>
+<script src="assets/js/store.js"></script>
+<script>
+Sora.ready(() => {
+  'use strict';
+  const S = Sora, { $, esc, I, moneyText } = S;
+  $('#trackIco').innerHTML = I.box;
+  const q = new URLSearchParams(location.search);
+  if (q.get('order')) $('#tOrder').value = q.get('order').toUpperCase();
+  const STEPS = [
+    ['received', 'استلمنا طلبك', 'تم تأكيد الطلب'],
+    ['processing', 'جاري التجهيز', 'نجهّز قطعك للشحن'],
+    ['shipped', 'تم الشحن', 'طلبك بالطريق'],
+    ['delivered', 'تم التوصيل', 'نتمنى تعجبك ♡'],
+  ];
+  const LEVEL = { new: 0, paid: 0, processing: 1, shipped: 2, delivered: 3 };
+  $('#trackForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const err = $('#tErr'); err.hidden = true;
+    const orderId = $('#tOrder').value.trim().toUpperCase(), phone = $('#tPhone').value.trim();
+    if (!orderId || !phone) { err.textContent = 'اكتبي رقم الطلب ورقم الجوال.'; err.hidden = false; return; }
+    $('#tBtn').disabled = true; $('#tBtn').textContent = 'جاري البحث…';
+    let res;
+    try { res = await S.api('track', { orderId, phone }); } catch (x) { res = { ok: false, error: x.message }; }
+    $('#tBtn').disabled = false; $('#tBtn').textContent = 'تتبّع';
+    if (!res || !res.ok) {
+      err.textContent = res && res.error === 'not_found' ? 'ما لقينا طلب بهالرقم وهالجوال — تأكدي منهم.' : (res && res.error === 'backend_not_configured' ? 'خدمة التتبّع تفتح قريباً.' : 'صار خطأ — حاولي بعد شوي.');
+      err.hidden = false; $('#tResult').innerHTML = ''; return;
+    }
+    const lvl = LEVEL[res.status];
+    let body;
+    if (res.status === 'awaiting_payment') body = '<p class="note" style="margin-top:1.4rem">الطلب بانتظار إتمام الدفع. إذا انخصم المبلغ تواصلي معنا.</p>';
+    else if (res.status === 'cancelled') body = '<p class="note" style="margin-top:1.4rem">تم إلغاء هذا الطلب.</p>';
+    else if (res.status === 'refunded') body = '<p class="note" style="margin-top:1.4rem">تم استرجاع مبلغ هذا الطلب.</p>';
+    else body = `<ol class="timeline">${STEPS.map((s, i) => `<li class="${i <= lvl ? 'done' : ''}"><b>${s[1]}</b><small>${s[2]}${s[0] === 'shipped' && res.trackingNo ? ` — ${esc(res.carrier || 'شركة الشحن')}: <span dir="ltr">${esc(res.trackingNo)}</span>` : ''}</small></li>`).join('')}</ol>`;
+    $('#tResult').innerHTML = `<div class="co-card" style="margin-top:1.2rem;text-align:start">
+      <div class="sum-row"><span>رقم الطلب</span><b dir="ltr">${esc(res.orderId)}</b></div>
+      <div class="sum-row"><span>الإجمالي</span><span>${moneyText(res.total)}</span></div>
+      <div class="sum-row"><span>القطع</span><span>${res.items.map(i => `${esc(i.name)} × ${i.qty}`).join('، ')}</span></div>
+      ${body}</div>`;
+  });
+  if (q.get('order') && q.get('phone')) { $('#tPhone').value = q.get('phone'); $('#trackForm').requestSubmit(); }
+});
+</script>
+</body>
+</html>

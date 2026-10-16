@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Garment gallery (dev)</title>
+<style>
+  body { margin: 0; padding: 24px; background: #fbf8f4; font-family: system-ui, sans-serif; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 14px; }
+  figure { margin: 0; background: #f3ece3; border-radius: 14px; padding: 10px; text-align: center; }
+  figure svg { width: 100%; height: auto; display: block; }
+  figcaption { font-size: 13px; color: #6f6569; margin-top: 4px; }
+</style>
+</head>
+<body>
+<div class="grid" id="g"></div>
+<script src="../assets/js/garments.js"></script>
+<script>
+  const combos = [
+    ['maxi', '#c99a94'], ['wrap', '#1f6b57'], ['gown', '#6d1f2f'], ['abaya', '#1c1b1d'],
+    ['kaftan', '#efe8dc'], ['leggings', '#1c1b1d'], ['bra', '#8a9a7e'], ['set', '#b8a7cf'],
+    ['modestset', '#1f2a44'], ['lounge', '#d8c3a5'], ['pajama', '#e3b7b3'], ['isdal', '#f4ebdd'],
+    ['hijab', '#8b6b57'], ['tunic', '#6f8faf'], ['abaya', '#8b6b57'], ['maxi', '#1c1b1d'],
+  ];
+  document.getElementById('g').innerHTML = combos.map(([t, c]) =>
+    `<figure>${Garment.svg(t, c)}<figcaption>${t} · ${Garment.TYPES[t]}</figcaption></figure>`).join('');
+</script>
+</body>
+</html>

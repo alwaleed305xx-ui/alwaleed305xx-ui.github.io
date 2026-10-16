@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>إتمام الطلب | Sora Fashion</title>
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#5e2b48">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Noto+Naskh+Arabic:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/style.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%235e2b48'/%3E%3Ctext x='32' y='44' font-family='Georgia,serif' font-size='34' text-anchor='middle' fill='%23f5ede0'%3ES%3C/text%3E%3C/svg%3E">
+</head>
+<body>
+<div id="site-header"></div>
+
+<main class="container">
+  <div class="checkout-wrap" id="checkout">
+    <form id="coForm" novalidate>
+      <section class="co-card">
+        <h2><span class="step">1</span> بيانات التوصيل</h2>
+        <div class="form-grid">
+          <div class="field full"><label for="fName">الاسم الكامل</label><input class="input" id="fName" name="name" autocomplete="name" required maxlength="60"><span class="err" data-err="name"></span></div>
+          <div class="field"><label for="fPhone">رقم الجوال</label><input class="input" id="fPhone" name="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="05XXXXXXXX" dir="ltr" required maxlength="16"><span class="err" data-err="phone"></span></div>
+          <div class="field"><label for="fCity">المدينة</label><select class="select" id="fCity" name="city" required></select><span class="err" data-err="city"></span></div>
+          <div class="field" id="cityOtherWrap" hidden><label for="fCityOther">اسم المدينة</label><input class="input" id="fCityOther" maxlength="40"></div>
+          <div class="field"><label for="fDistrict">الحي</label><input class="input" id="fDistrict" name="district" required maxlength="60"><span class="err" data-err="district"></span></div>
+          <div class="field"><label for="fNational">العنوان الوطني المختصر <span class="opt">(يسرّع التوصيل — من تطبيق سبل)</span></label><input class="input" id="fNational" name="nationalAddress" placeholder="مثال: RAAA1234" dir="ltr" maxlength="8" autocapitalize="characters"><span class="err" data-err="nationalAddress"></span></div>
+          <div class="field full"><label for="fAddress">العنوان (الشارع، رقم المبنى، أقرب معلم)</label><input class="input" id="fAddress" name="address" autocomplete="street-address" required maxlength="200"><span class="err" data-err="address"></span></div>
+          <div class="field full"><label for="fNotes">ملاحظات <span class="opt">(اختياري)</span></label><input class="input" id="fNotes" name="notes" maxlength="300"></div>
+          <input type="text" name="website" id="fWebsite" tabindex="-1" autocomplete="off" class="sr-only" aria-hidden="true">
+        </div>
+        <p class="mini" style="color:var(--muted);font-size:.8rem;margin-top:.9rem">نستخدم بياناتك لتجهيز طلبك وتوصيله والتواصل معك بخصوصه فقط، ونشارك العنوان مع المورد وشركة الشحن للتوصيل. التفاصيل في <a href="policies.html#privacy" target="_blank" style="text-decoration:underline">سياسة الخصوصية</a>.</p>
+      </section>
+
+      <section class="co-card">
+        <h2><span class="step">2</span> طريقة الدفع</h2>
+        <div class="pay-options" id="payOptions"></div>
+        <label class="check-row"><input type="checkbox" id="fAgree" required> <span>قرأت وأوافق على <a href="policies.html#returns" target="_blank">سياسة الاستبدال والاسترجاع</a> و<a href="policies.html#privacy" target="_blank">سياسة الخصوصية</a> و<a href="policies.html#terms" target="_blank">الشروط</a>.</span></label>
+        <span class="err" data-err="agree" style="color:var(--err);font-size:.8rem"></span>
+        <div id="formError" class="form-error" hidden role="alert"></div>
+        <button class="btn btn-plum btn-block" id="placeBtn" type="submit" style="margin-top:1.2rem">إتمام الطلب</button>
+        <div id="payStep" hidden>
+          <div class="mysr-wrap"><div class="mysr-form"></div></div>
+          <div id="mockPay" hidden></div>
+        </div>
+        <p class="secure-line" id="secureLine"></p>
+      </section>
+    </form>
+
+    <aside class="co-card summary" id="summary" aria-label="ملخص الطلب"></aside>
+  </div>
+</main>
+
+<div id="site-footer"></div>
+
+<script src="assets/js/garments.js"></script>
+<script src="assets/js/store.js"></script>
+<script src="assets/js/checkout.js"></script>
+</body>
+</html>

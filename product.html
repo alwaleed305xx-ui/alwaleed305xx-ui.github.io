@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Sora Fashion | سورا فاشن</title>
+<meta name="description" content="سورا فاشن — أزياء نسائية منتقاة.">
+<meta name="theme-color" content="#5e2b48">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Noto+Naskh+Arabic:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/style.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%235e2b48'/%3E%3Ctext x='32' y='44' font-family='Georgia,serif' font-size='34' text-anchor='middle' fill='%23f5ede0'%3ES%3C/text%3E%3C/svg%3E">
+</head>
+<body>
+<div id="site-header"></div>
+
+<main class="container" id="pdpRoot">
+  <nav class="crumbs" id="crumbs" aria-label="مسار التصفح"></nav>
+  <div class="pdp" id="pdp"></div>
+  <section class="section" id="relatedWrap" hidden style="padding-top:0">
+    <div class="sec-head"><div><h2>ممكن يعجبك بعد</h2></div></div>
+    <div class="grid" id="related"></div>
+  </section>
+</main>
+
+<div class="sticky-buy" id="stickyBuy">
+  <div><b id="stickyPrice"></b></div>
+  <button class="btn btn-plum" id="stickyAdd">أضيفي للسلة</button>
+</div>
+
+<div class="modal" id="sizeModal" role="dialog" aria-modal="true" aria-labelledby="sizeTitle">
+  <div class="modal-card">
+    <div class="modal-head"><h3 id="sizeTitle">دليل المقاسات</h3><button class="icon-btn" data-close-modal aria-label="إغلاق">✕</button></div>
+    <div id="sizeBody"></div>
+  </div>
+</div>
+
+<div id="site-footer"></div>
+
+<script src="assets/js/garments.js"></script>
+<script src="assets/js/store.js"></script>
+<script src="assets/js/pdp.js"></script>
+</body>
+</html>

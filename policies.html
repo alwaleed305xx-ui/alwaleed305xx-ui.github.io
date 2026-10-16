@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>السياسات | Sora Fashion</title>
+<meta name="description" content="سياسات سورا فاشن: الشحن والتوصيل، الاستبدال والاسترجاع، الخصوصية، والشروط والأحكام.">
+<meta name="theme-color" content="#5e2b48">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Noto+Naskh+Arabic:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/style.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%235e2b48'/%3E%3Ctext x='32' y='44' font-family='Georgia,serif' font-size='34' text-anchor='middle' fill='%23f5ede0'%3ES%3C/text%3E%3C/svg%3E">
+</head>
+<body>
+<div id="site-header"></div>
+<main class="container"><article class="policy" id="policy"></article></main>
+<div id="site-footer"></div>
+<script src="assets/js/garments.js"></script>
+<script src="assets/js/store.js"></script>
+<script>
+Sora.ready(() => {
+  'use strict';
+  const S = Sora, { esc } = S;
+  const c = S.config, ct = c.contact || {}, lg = c.legal || {};
+  const contact = [ct.email && `الإيميل: <a href="mailto:${esc(ct.email)}">${esc(ct.email)}</a>`, ct.phone && `الجوال: <span dir="ltr">${esc(ct.phone)}</span>`].filter(Boolean).join(' · ') || 'من خلال وسائل التواصل أسفل الصفحة';
+  const owner = lg.ownerName ? esc(lg.ownerName) : 'صاحبة/صاحب المتجر';
+  const doc = lg.freelanceDocNo ? `بموجب وثيقة العمل الحر رقم ${esc(lg.freelanceDocNo)}` : 'بموجب وثيقة العمل الحر';
+  document.getElementById('policy').innerHTML = `
+    <h1>سياسات سورا فاشن</h1>
+    <p>متجر «سورا فاشن — Sora Fashion» متجر إلكتروني يديره ${owner} ${doc}${lg.address ? '، العنوان: ' + esc(lg.address) : (lg.city ? '، ' + esc(lg.city) : '')}، المملكة العربية السعودية. للتواصل: ${contact}.${lg.authUrl ? ` <a href="${esc(lg.authUrl)}" target="_blank" rel="noopener">شهادة توثيق المتجر في منصة الأعمال</a>.` : ''}</p>
+    <nav class="policy-nav"><a class="chip" href="#shipping">الشحن والتوصيل</a><a class="chip" href="#returns">الاستبدال والاسترجاع</a><a class="chip" href="#payment">الدفع</a><a class="chip" href="#privacy">الخصوصية</a><a class="chip" href="#complaints">الشكاوى</a><a class="chip" href="#terms">الشروط والأحكام</a></nav>
+
+    <h2 id="shipping">الشحن والتوصيل</h2>
+    <ul>
+      <li>نجهّز الطلب خلال 1 إلى 3 أيام عمل من تأكيده، ويُشحن من مستودعات موردينا مباشرة إلى عنوانك.</li>
+      <li>مدة التوصيل المتوقعة <b>${esc(c.shippingDays)} يوم</b> لجميع مدن المملكة، وقد تزيد في المواسم أو الإجازات الرسمية أو لأسباب خارجة عن إرادتنا، وسنبلغك بأي تأخير.</li>
+      <li>رسوم الشحن ${esc(S.fmt(c.shippingFee))} ر.س، والشحن مجاني للطلبات من ${esc(S.fmt(c.freeShippingOver))} ر.س بعد الخصم.</li>
+      <li>يصلك رقم تتبّع بعد الشحن، وتقدرين تتابعين الطلب من صفحة <a href="track.html">تتبّع طلبك</a>.</li>
+      <li>الأسعار المعروضة نهائية وشاملة لكل الرسوم${c.codEnabled ? ' (عدا رسوم الدفع عند الاستلام إن اخترتيه، وتظهر قبل تأكيد الطلب)' : ''}. إذا طلبت منك شركة الشحن أي رسوم جمركية أو رسوم بيان جمركي عند الاستلام، <b>نعوّضك عنها كاملة</b> — أرسلي لنا صورة الإيصال.</li>
+      <li>إذا تأخر وصول طلبك أكثر من 15 يوماً عن نهاية المدة المتوقعة، لك حق إلغاء الطلب واسترداد كامل المبلغ.</li>
+      <li>تأكدي من صحة العنوان ورقم الجوال؛ إذا تعذّر التوصيل بسبب بيانات غير صحيحة نتواصل معك لإعادة الإرسال.</li>
+    </ul>
+
+    <h2 id="returns">الاستبدال والاسترجاع</h2>
+    <ul>
+      <li>لك حق إرجاع أو استبدال القطعة خلال <b>${esc(c.returnsDays)} أيام</b> من تاريخ الاستلام، بشرط أن تكون بحالتها الأصلية غير ملبوسة وغير مغسولة ومع البطاقات والتغليف.</li>
+      <li>لأسباب صحية لا تُسترجع الملابس الداخلية وملابس السباحة والإكسسوارات الملامسة للجسم بعد فتح تغليفها، إلا إذا وصلت معيبة.</li>
+      <li>إذا وصلتك القطعة <b>معيبة أو مختلفة عن الطلب أو بمقاس غير اللي طلبتيه</b>: نتحمّل كامل تكاليف الاستبدال أو نسترجع لك المبلغ كاملاً شاملاً الشحن.</li>
+      <li>في غير ذلك (تغيير الرأي أو المقاس) تتحمّلين تكلفة شحن الإرجاع، ونسترجع لك قيمة القطعة.</li>
+      <li>لطلب الإرجاع: تواصلي معنا برقم الطلب وصورة القطعة، ونرسل لك طريقة الإرجاع خلال يوم عمل.</li>
+      <li>يُعاد المبلغ بنفس طريقة الدفع خلال 3 إلى 14 يوم عمل من استلامنا للقطعة وفحصها (حسب البنك).</li>
+    </ul>
+
+    <h2 id="payment">الدفع</h2>
+    <ul>
+      <li>الدفع الإلكتروني يتم عبر بوابة «ميسّر» المرخّصة من البنك المركزي السعودي، ويدعم مدى وApple Pay وفيزا وماستركارد وSTC Pay.</li>
+      <li>بيانات البطاقة تُدخل في صفحة البوابة مباشرة ولا تمر علينا ولا نحفظها.</li>
+      ${c.codEnabled ? `<li>الدفع عند الاستلام متاح برسوم ${esc(S.fmt(c.codFee))} ر.س تظهر في ملخص الطلب.</li>` : ''}
+      <li>الأسعار بالريال السعودي.</li>
+    </ul>
+
+    <h2 id="privacy">سياسة الخصوصية</h2>
+    <ul>
+      <li>نجمع فقط البيانات اللازمة لتنفيذ طلبك: الاسم، رقم الجوال، العنوان، والقطع المطلوبة.</li>
+      <li>نستخدمها لتجهيز الطلب وشحنه والتواصل معك بخصوصه وخدمة ما بعد البيع، ولا نبيعها ولا نشاركها لأغراض تسويقية.</li>
+      <li>نشارك العنوان ورقم الجوال مع المورد وشركة الشحن بالقدر اللازم للتوصيل فقط.</li>
+      <li>نحتفظ ببيانات الطلب للمدة اللازمة نظاماً ولخدمة الاستبدال والضمان، ولك طلب الاطلاع على بياناتك أو تصحيحها أو حذفها بالتواصل معنا.</li>
+      <li>يحفظ المتصفح سلّتك ومفضلتك على جهازك فقط لتسهيل التسوّق.</li>
+    </ul>
+
+    <h2 id="complaints">الشكاوى والملاحظات</h2>
+    <ul>
+      <li>لأي شكوى أو ملاحظة تواصلي معنا: ${contact} — مع رقم الطلب إن وجد.</li>
+      <li>نرد على الشكوى خلال يومي عمل كحد أقصى، ونسعى لحلها خلال 7 أيام عمل.</li>
+      <li>إذا لم تُحل شكواك، يحق لك رفعها لوزارة التجارة عبر الرقم الموحد 1900 أو تطبيق «بلاغ تجاري».</li>
+    </ul>
+
+    <h2 id="terms">الشروط والأحكام</h2>
+    <ul>
+      <li>بإتمام الطلب تقرّين بصحة البيانات المدخلة وموافقتك على هذه السياسات.</li>
+      <li>نحرص على دقة الصور والوصف، وقد يختلف اللون قليلاً حسب إضاءة الشاشة.</li>
+      <li>يحق لنا إلغاء الطلب واسترجاع المبلغ كاملاً إذا نفدت القطعة أو ظهر خطأ واضح في السعر، مع إبلاغك فوراً.</li>
+      <li>أكواد الخصم لا تُجمع مع بعضها ولها شروطها المعلنة.</li>
+      <li>تخضع هذه الشروط لأنظمة المملكة العربية السعودية، ومنها نظام التجارة الإلكترونية ونظام حماية البيانات الشخصية.</li>
+    </ul>
+    <p style="color:var(--muted);font-size:.85rem;margin-top:2rem">آخر تحديث: أكتوبر 2026</p>`;
+  if (location.hash) setTimeout(() => { const t = document.querySelector(location.hash); if (t) t.scrollIntoView(); }, 50);
+});
+</script>
+</body>
+</html>
