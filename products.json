@@ -39,9 +39,12 @@
         "minSubtotal": 0,
         "active": true,
         "showOnHome": true,
-        "headline": "خصم ١٠٪ على طلبك الأول"
+        "headline": "خصم ١٠٪ على طلبك الأول",
+        "firstOrderOnly": true
       }
-    ]
+    ],
+    "turnstileSiteKey": "",
+    "lastId": 28
   },
   "cats": [
     {

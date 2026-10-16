@@ -108,12 +108,19 @@
 
   /* ───── cart ───── */
   const lineKey = (id, color, size) => `${id}|${color}|${size}`;
+  const MAX_LINES = 20;
   S.cartRaw = () => LS.get(KEYS.cart, []);
-  S.cartLines = () => S.cartRaw().map(l => {
+  /* A line whose colour or size no longer exists is kept visible (so it can be removed)
+     but marked unavailable and never priced or ordered. Keys always use the stored values. */
+  S.cartLines = includeUnavailable => S.cartRaw().map(l => {
     const p = S.product(l.id);
-    if (!p) return null;
     const qty = Math.max(1, Math.min(10, parseInt(l.qty, 10) || 1));
-    return { ...l, qty, p, unit: p.price, line: round2(p.price * qty), color: S.colorOf(p, l.color) };
+    const key = lineKey(l.id, l.color, l.size);
+    if (!p) return includeUnavailable ? { ...l, qty, key, p: null, unavailable: true } : null;
+    const color = (p.colors || []).find(c => c.name === l.color);
+    const ok = !!color && (p.sizes || []).includes(l.size);
+    if (!ok && !includeUnavailable) return null;
+    return { ...l, qty, key, p, unit: p.price, line: round2(p.price * qty), color: color || { name: l.color, hex: '#bbbbbb' }, unavailable: !ok };
   }).filter(Boolean);
   S.cartCount = () => S.cartLines().reduce((s, l) => s + l.qty, 0);
   S.addToCart = (id, color, size, qty) => {
@@ -121,10 +128,13 @@
     const key = lineKey(id, color, size);
     const ex = cart.find(l => lineKey(l.id, l.color, l.size) === key);
     if (ex) ex.qty = Math.min(10, (parseInt(ex.qty, 10) || 1) + (qty || 1));
+    else if (cart.length >= MAX_LINES) { S.toast(`الحد ${MAX_LINES} قطعة مختلفة في الطلب الواحد`); return false; }
     else cart.push({ id: String(id), color, size, qty: Math.min(10, qty || 1) });
     LS.set(KEYS.cart, cart);
     S.renderCart();
     S.updateBadges();
+    document.dispatchEvent(new CustomEvent('sora:cart'));
+    return true;
   };
   S.setQty = (key, qty) => {
     let cart = S.cartRaw();
@@ -135,7 +145,8 @@
     S.updateBadges();
     document.dispatchEvent(new CustomEvent('sora:cart'));
   };
-  S.clearCart = () => { LS.set(KEYS.cart, []); LS.del(KEYS.coupon); S.updateBadges(); };
+  S.clearCart = () => { LS.set(KEYS.cart, []); LS.del(KEYS.coupon); S.renderCart(); S.updateBadges(); document.dispatchEvent(new CustomEvent('sora:cart')); };
+  S.freeOver = () => { const f = Number(S.config.freeShippingOver); return isFinite(f) && f > 0 ? f : 0; };
   S.lineKey = lineKey;
 
   /* totals — MUST mirror backend/Code.gs computeTotals() */
@@ -159,7 +170,8 @@
       }
     }
     const after = round2(subtotal - discount);
-    const shipping = lines.length === 0 ? 0 : (after >= Number(cfg.freeShippingOver || Infinity) ? 0 : round2(Number(cfg.shippingFee) || 0));
+    const free = Number(cfg.freeShippingOver);
+    const shipping = lines.length === 0 ? 0 : (isFinite(free) && free > 0 && after >= free ? 0 : round2(Number(cfg.shippingFee) || 0));
     const codFee = opts.payment === 'cod' ? round2(Number(cfg.codFee) || 0) : 0;
     return { subtotal, discount, coupon, couponError, shipping, codFee, total: round2(after + shipping + codFee) };
   };
@@ -233,7 +245,6 @@
           <div class="nav-wrap">
             <button class="icon-btn burger" id="burger" aria-label="القائمة">${I.menu}</button>
             <nav class="nav" id="nav" aria-label="الأقسام">
-              <button class="icon-btn nav-close burger" id="navClose" aria-label="إغلاق">${I.close}</button>
               ${NAV.map(([h, t]) => `<a href="${h}">${t}</a>`).join('')}
             </nav>
           </div>
@@ -312,6 +323,12 @@
     const d = document.createElement('div');
     d.innerHTML = `
       <div class="overlay" id="overlay"></div>
+      <nav class="mnav" id="mnav" aria-label="القائمة" aria-hidden="true">
+        <div class="mnav-head"><span class="logo-word" style="font-size:1.3rem">SORA</span><button class="icon-btn" id="navClose" aria-label="إغلاق">${I.close}</button></div>
+        ${NAV.map(([h, t]) => `<a href="${h}">${t}</a>`).join('')}
+        <a href="track.html">تتبّع طلبك</a>
+        <a href="policies.html">السياسات</a>
+      </nav>
       <aside class="drawer" id="cartDrawer" aria-label="سلة التسوق" aria-hidden="true">
         <div class="drawer-head"><h3>سلّتك <span id="drawerCount" style="color:var(--muted);font-weight:400"></span></h3><button class="icon-btn" id="cartClose" aria-label="إغلاق">${I.close}</button></div>
         <div class="ship-meter" id="shipMeter"></div>
@@ -324,33 +341,43 @@
   S.renderCart = () => {
     const body = $('#cartBody');
     if (!body) return;
-    const lines = S.cartLines();
+    const all = S.cartLines(true);
+    const lines = all.filter(l => !l.unavailable);
     const t = S.totals(lines, {});
-    const cfg = S.config;
     $('#drawerCount').textContent = lines.length ? `(${S.cartCount()})` : '';
-    const free = Number(cfg.freeShippingOver) || 0;
+    const free = S.freeOver();
     const left = round2(free - (t.subtotal - t.discount));
-    $('#shipMeter').innerHTML = !lines.length ? `شحن مجاني للطلبات فوق ${fmt(free)} ر.س` :
-      (left > 0 ? `باقي <b>${fmt(left)} ر.س</b> ويصير شحنك مجاني` : '<b>مبروك!</b> شحنك مجاني 🎉') +
-      `<div class="bar"><i style="width:${Math.min(100, (t.subtotal / (free || 1)) * 100)}%"></i></div>`;
-    if (!lines.length) {
+    $('#shipMeter').hidden = !free;
+    if (free) {
+      $('#shipMeter').innerHTML = !lines.length ? `شحن مجاني للطلبات فوق ${fmt(free)} ر.س` :
+        (left > 0 ? `باقي <b>${fmt(left)} ر.س</b> ويصير شحنك مجاني` : '<b>مبروك!</b> شحنك مجاني 🎉') +
+        `<div class="bar"><i style="width:${Math.min(100, (t.subtotal / free) * 100)}%"></i></div>`;
+    }
+    if (!all.length) {
       body.innerHTML = `<div class="cart-empty">${I.bag}<p>سلّتك فاضية</p><a class="btn btn-line" href="index.html#catalog" style="margin-top:1rem">ابدئي التسوّق</a></div>`;
       $('#cartFoot').innerHTML = '';
       return;
     }
-    body.innerHTML = lines.map(l => `
+    body.innerHTML = all.map(l => l.unavailable ? `
+      <div class="line-item" style="opacity:.6">
+        <span class="li-thumb">${l.p ? S.media(l.p, '') : ''}</span>
+        <div><div class="li-name">${esc(l.p ? l.p.name : 'قطعة')}</div><div class="li-meta" style="color:var(--err)">${esc(l.color || '')}${l.size ? ` · ${esc(l.size)}` : ''} — ما عاد متوفر، احذفيه</div>
+          <div class="li-actions"><button class="li-remove" data-rm="${esc(l.key)}">حذف</button></div></div>
+        <div></div>
+      </div>` : `
       <div class="line-item">
         <a class="li-thumb" href="${S.productUrl(l.p)}">${S.media(l.p, l.color.name)}</a>
         <div>
           <a class="li-name" href="${S.productUrl(l.p)}">${esc(l.p.name)}</a>
           <div class="li-meta">${esc(l.color.name)}${l.size ? ` · مقاس ${esc(l.size)}` : ''}</div>
           <div class="li-actions">
-            <div class="qty"><button data-q="${esc(S.lineKey(l.id, l.color.name, l.size))}" data-d="1" aria-label="زيادة">+</button><b>${l.qty}</b><button data-q="${esc(S.lineKey(l.id, l.color.name, l.size))}" data-d="-1" aria-label="إنقاص">−</button></div>
-            <button class="li-remove" data-rm="${esc(S.lineKey(l.id, l.color.name, l.size))}">حذف</button>
+            <div class="qty"><button data-q="${esc(l.key)}" data-d="1" aria-label="زيادة">+</button><b>${l.qty}</b><button data-q="${esc(l.key)}" data-d="-1" aria-label="إنقاص">−</button></div>
+            <button class="li-remove" data-rm="${esc(l.key)}">حذف</button>
           </div>
         </div>
         <div class="li-price">${moneyText(l.line)}</div>
       </div>`).join('');
+    if (!lines.length) { $('#cartFoot').innerHTML = ''; return; }
     $('#cartFoot').innerHTML = `
       <div class="sum-row"><span>المجموع</span><b>${moneyText(t.subtotal)}</b></div>
       <div class="sum-row"><span>الشحن</span><span>${t.shipping ? moneyText(t.shipping) : 'مجاني'}</span></div>
@@ -361,8 +388,9 @@
 
   S.openCart = () => { $('#cartDrawer').classList.add('open'); $('#cartDrawer').setAttribute('aria-hidden', 'false'); $('#overlay').classList.add('show'); document.body.style.overflow = 'hidden'; };
   S.closeAll = () => {
-    $$('.drawer.open, .nav.open, .search-panel.open, .modal.open').forEach(x => x.classList.remove('open'));
+    $$('.drawer.open, .mnav.open, .search-panel.open, .modal.open').forEach(x => x.classList.remove('open'));
     const d = $('#cartDrawer'); if (d) d.setAttribute('aria-hidden', 'true');
+    const m = $('#mnav'); if (m) m.setAttribute('aria-hidden', 'true');
     const o = $('#overlay'); if (o) o.classList.remove('show');
     document.body.style.overflow = '';
   };
@@ -384,15 +412,16 @@
 
   function bindShell() {
     document.addEventListener('click', e => {
-      const t = e.target.closest('[data-fav],[data-q],[data-rm],#cartBtn,#cartClose,#overlay,#burger,#navClose,#searchBtn,#searchClose,#dropDraft');
+      const t = e.target.closest('[data-fav],[data-q],[data-rm],#cartBtn,#cartClose,#overlay,#burger,#navClose,#searchBtn,#searchClose,#dropDraft,.mnav a');
       if (!t) return;
       if (t.dataset.fav) { e.preventDefault(); S.toggleFav(t.dataset.fav); }
       else if (t.dataset.q) S.setQty(t.dataset.q, (S.cartRaw().find(l => S.lineKey(l.id, l.color, l.size) === t.dataset.q) || { qty: 0 }).qty + Number(t.dataset.d));
       else if (t.dataset.rm) S.setQty(t.dataset.rm, 0);
       else if (t.id === 'cartBtn') S.openCart();
-      else if (t.id === 'burger') { $('#nav').classList.add('open'); $('#overlay').classList.add('show'); }
+      else if (t.id === 'burger') { $('#mnav').classList.add('open'); $('#mnav').setAttribute('aria-hidden', 'false'); $('#overlay').classList.add('show'); }
       else if (t.id === 'searchBtn') { $('#searchPanel').classList.add('open'); $('#overlay').classList.add('show'); setTimeout(() => $('#searchInput').focus(), 150); }
-      else if (t.id === 'dropDraft') { LS.del(KEYS.draft); location.reload(); }
+      else if (t.id === 'dropDraft') { if (confirm('تلغين المسودة وتنحذف كل التعديلات غير المنشورة؟')) { LS.del(KEYS.draft); location.reload(); } }
+      else if (t.matches('.mnav a')) S.closeAll();
       else S.closeAll();
     });
     document.addEventListener('keydown', e => { if (e.key === 'Escape') S.closeAll(); });
@@ -400,7 +429,7 @@
     if (si) si.addEventListener('input', e => renderSearch(e.target.value));
     const h = $('#header');
     if (h) window.addEventListener('scroll', () => h.classList.toggle('scrolled', scrollY > 8), { passive: true });
-    window.addEventListener('storage', e => { if (e.key === KEYS.cart || e.key === KEYS.favs) { S.renderCart(); S.updateBadges(); } });
+    window.addEventListener('storage', e => { if (e.key === KEYS.cart || e.key === KEYS.favs) { S.renderCart(); S.updateBadges(); document.dispatchEvent(new CustomEvent('sora:cart')); } });
   }
 
   const io = 'IntersectionObserver' in window ? new IntersectionObserver(es => es.forEach(en => { if (en.isIntersecting) { en.target.classList.add('in'); io.unobserve(en.target); } }), { threshold: 0.08 }) : null;

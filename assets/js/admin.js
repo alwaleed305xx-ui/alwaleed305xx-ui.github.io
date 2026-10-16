@@ -24,6 +24,11 @@
   let data = null;           // working copy (draft or published)
   let published = null;      // published products.json for diffing
   let suppliers = LS.get(K.sup, {});
+  let supDirty = new Set(LS.get('sora-sup-dirty', []));      // edited here, not yet saved to the server
+  let supRemoved = new Set(LS.get('sora-sup-removed', []));  // deleted here, not yet removed on the server
+  let supSynced = false;                                      // server map loaded this session
+  const saveSupLocal = () => { LS.set(K.sup, suppliers); LS.set('sora-sup-dirty', [...supDirty]); LS.set('sora-sup-removed', [...supRemoved]); };
+  const markSup = id => { supDirty.add(String(id)); supRemoved.delete(String(id)); saveSupLocal(); };
   let orders = [];
   let orderFilter = 'todo';
 
@@ -96,7 +101,7 @@
       return;
     }
     orders = res.orders;
-    try { const s = await api('getSuppliers'); if (s.ok) { suppliers = Object.assign({}, suppliers, s.map); LS.set(K.sup, suppliers); } } catch (e) { /* keep local */ }
+    await loadSuppliers();
     renderOrders();
   }
 
@@ -174,10 +179,12 @@
 
   async function saveOrder(id) {
     const v = p => $(`#${p}-${CSS.escape(id)}`).value.trim();
-    const payload = { orderId: id, status: v('st'), supplierRef: v('sr'), carrier: v('ca'), trackingNo: v('tn') };
+    const cur = orders.find(o => o.orderId === id) || {};
+    const payload = { orderId: id, prevStatus: cur.status, status: v('st'), supplierRef: v('sr'), carrier: v('ca'), trackingNo: v('tn') };
     if (payload.status === 'shipped' && !payload.trackingNo && !confirm('ما كتبتي رقم تتبّع — تحفظين "تم الشحن" بدونه؟')) return;
     let res;
     try { res = await api('updateOrder', payload); } catch (e) { res = { ok: false }; }
+    if (!res.ok && res.error === 'stale_order') { toast('الطلب تغيّر من مكان ثاني (مثلاً وصل الدفع) — حدّثنا البيانات، راجعيه واحفظي مرة ثانية'); await refreshOrders(); return; }
     if (!res.ok) { toast('ما انحفظ — ' + (res.error || 'خطأ اتصال')); return; }
     const i = orders.findIndex(o => o.orderId === id);
     if (i > -1) orders[i] = res.order;
@@ -191,15 +198,25 @@
   /* ═════════ PRODUCTS ═════════ */
   let pq = '', pcat = 'all';
   function renderProducts() {
-    const list = data.products.filter(p => (pcat === 'all' || p.cat === pcat) && (!pq || p.name.includes(pq)));
     $('#tab-products').innerHTML = `
       <div class="row" style="margin-bottom:1rem">
         <button class="btn btn-plum btn-sm" id="addP">＋ منتج جديد</button>
         <input class="input" id="pq" placeholder="ابحثي…" value="${esc(pq)}" style="max-width:240px;min-height:40px">
         <select class="select" id="pcat" style="max-width:200px;min-height:40px"><option value="all">كل الأقسام</option>${data.cats.map(c => `<option value="${esc(c.id)}" ${pcat === c.id ? 'selected' : ''}>${esc(c.name)}</option>`).join('')}</select>
-        <span class="mini">${list.length} من ${data.products.length}</span>
+        <span class="mini" id="pcount"></span>
       </div>
-      <div class="pgrid">${list.map(p => {
+      <div class="pgrid" id="pgrid"></div>`;
+    renderProductGrid();
+    $('#addP').onclick = () => openEditor(null);
+    $('#pq').oninput = e => { pq = e.target.value; renderProductGrid(); };
+    $('#pcat').onchange = e => { pcat = e.target.value; renderProductGrid(); };
+    bindProductActions();
+  }
+  function renderProductGrid() {
+    const q = pq.trim();
+    const list = data.products.filter(p => (pcat === 'all' || p.cat === pcat) && (!q || p.name.includes(q)));
+    $('#pcount').textContent = `${list.length} من ${data.products.length}`;
+    $('#pgrid').innerHTML = `${list.map(p => {
         const s = suppliers[String(p.id)] || {};
         const c0 = (p.colors || [])[0] || { hex: '#333' };
         const img = (p.images || [])[0];
@@ -209,10 +226,9 @@
             <span class="mini">${s.url ? '<span class="ok-dot">●</span> مربوط بمورد' : '<span class="warn-dot">●</span> بدون مورد'}${s.cost ? ` · تكلفة ${sar(s.cost)}` : ''}${(p.images || []).length ? ' · صور حقيقية' : ''}</span>
             <div class="pc-actions"><button data-edit="${p.id}">تعديل</button><button data-dup="${p.id}">نسخ</button><button data-tog="${p.id}">${p.show === false ? 'إظهار' : 'إخفاء'}</button><button data-del="${p.id}">حذف</button></div>
           </div></div>`;
-      }).join('')}</div>`;
-    $('#addP').onclick = () => openEditor(null);
-    $('#pq').oninput = e => { pq = e.target.value.trim(); renderProducts(); $('#pq').focus(); };
-    $('#pcat').onchange = e => { pcat = e.target.value; renderProducts(); };
+      }).join('')}`;
+  }
+  function bindProductActions() {
     $('#tab-products').onclick = e => {
       const b = e.target.closest('[data-edit],[data-dup],[data-tog],[data-del]');
       if (!b) return;
@@ -221,10 +237,19 @@
       if (b.dataset.edit) openEditor(p);
       else if (b.dataset.dup) { const copyP = JSON.parse(JSON.stringify(p)); copyP.id = nextId(); copyP.name += ' (نسخة)'; data.products.unshift(copyP); saveDraft('انسخ المنتج'); renderProducts(); }
       else if (b.dataset.tog) { p.show = p.show === false; saveDraft(); renderProducts(); }
-      else if (b.dataset.del && confirm(`حذف «${p.name}»؟`)) { data.products = data.products.filter(x => x.id !== id); saveDraft('انحذف'); renderProducts(); }
+      else if (b.dataset.del && confirm(`حذف «${p.name}»؟`)) {
+        data.config.lastId = Math.max(Number(data.config.lastId) || 0, ...data.products.map(x => Number(x.id) || 0));
+        data.products = data.products.filter(x => x.id !== id);
+        if (suppliers[String(id)]) { delete suppliers[String(id)]; supDirty.delete(String(id)); supRemoved.add(String(id)); saveSupLocal(); syncSuppliers(true); }
+        saveDraft('انحذف'); renderProducts();
+      }
     };
   }
-  const nextId = () => Math.max(0, ...data.products.map(p => Number(p.id) || 0)) + 1;
+  const nextId = () => {
+    const id = Math.max(Number(data.config.lastId) || 0, ...data.products.map(p => Number(p.id) || 0)) + 1;
+    data.config.lastId = id;
+    return id;
+  };
 
   function openEditor(p) {
     const isNew = !p;
@@ -284,7 +309,7 @@
       const i = data.products.findIndex(x => x.id === e.id);
       if (i > -1) data.products[i] = e; else data.products.unshift(e);
       suppliers[String(e.id)] = { supplier: f.s_supplier.value.trim(), url: f.s_url.value.trim(), cost: Number(f.s_cost.value) || 0, notes: f.s_notes.value.trim() };
-      LS.set(K.sup, suppliers);
+      markSup(e.id);
       saveDraft('انحفظ في المسودة ✓');
       syncSuppliers(true);
       closeEditor();
@@ -296,11 +321,28 @@
   const colorRow = c => `<div class="color-row"><input class="input" type="text" value="${esc(c.name)}" placeholder="اسم اللون"><input type="color" value="${esc(c.hex)}"><button type="button" class="icon-btn" data-rmc aria-label="حذف">✕</button></div>`;
   const closeEditor = () => { $('#editor').classList.remove('open'); $('#overlay').classList.remove('show'); };
 
+  async function loadSuppliers() {
+    try {
+      const s = await api('getSuppliers');
+      if (!s.ok) return false;
+      const merged = Object.assign({}, s.map);
+      supDirty.forEach(id => { if (suppliers[id]) merged[id] = suppliers[id]; });
+      supRemoved.forEach(id => { delete merged[id]; });
+      suppliers = merged; supSynced = true; saveSupLocal();
+      return true;
+    } catch (e) { return false; }
+  }
+  /* upsert only what changed here; never push a stale full copy over the server's rows */
   async function syncSuppliers(silent) {
     if (!endpoint() || !LS.get(K.token, '')) return false;
+    if (!supSynced && !(await loadSuppliers())) { if (!silent) toast('تعذر تحميل بيانات الموردين من السيرفر'); return false; }
+    if (!supDirty.size && !supRemoved.size) { if (!silent) toast('كل شي متزامن ✓'); return true; }
     try {
-      const res = await api('setSuppliers', { map: suppliers });
-      if (!silent) toast(res.ok ? `انحفظت بيانات ${res.count} مورد في السيرفر ✓` : 'ما انحفظت — ' + res.error);
+      const map = {};
+      supDirty.forEach(id => { if (suppliers[id]) map[id] = suppliers[id]; });
+      const res = await api('setSuppliers', { map, remove: [...supRemoved] });
+      if (res.ok) { supDirty.clear(); supRemoved.clear(); suppliers = res.map || suppliers; saveSupLocal(); }
+      if (!silent) toast(res.ok ? `انحفظت بيانات الموردين في السيرفر ✓ (${res.count})` : 'ما انحفظت — ' + res.error);
       return res.ok;
     } catch (e) { if (!silent) toast('تعذر الاتصال'); return false; }
   }
@@ -333,7 +375,7 @@
       const id = i.dataset.s;
       suppliers[id] = Object.assign({ supplier: '', url: '', cost: 0, notes: '' }, suppliers[id] || {});
       suppliers[id][i.dataset.k] = i.dataset.k === 'cost' ? Number(i.value) || 0 : i.value.trim();
-      LS.set(K.sup, suppliers);
+      markSup(id);
     };
     $('#saveSup').onclick = async () => {
       LS.set(K.fee, { pct: Number($('#feePct').value) || 0, fixed: Number($('#feeFixed').value) || 0 });
@@ -353,6 +395,7 @@
         <div class="field c2"><label>مفتاح ميسّر العام (Publishable key)</label>${inp('moyasarPublishableKey', c.moyasarPublishableKey, 'dir="ltr" placeholder="pk_live_…"')}<span class="help">المفتاح العام فقط (pk_). السري (sk_) يروح في السيرفر وما ينحط هنا أبداً.</span></div>
         <div class="field"><label>الدفع عند الاستلام</label><select class="select" data-cfg="codEnabled"><option value="" ${!c.codEnabled ? 'selected' : ''}>مقفل</option><option value="1" ${c.codEnabled ? 'selected' : ''}>مفعّل</option></select></div>
         <div class="field"><label>رسوم الدفع عند الاستلام</label>${inp('codFee', c.codFee, 'type="number"')}</div>
+        <div class="field c4"><label>مفتاح Cloudflare Turnstile العام (اختياري — حماية من الطلبات الوهمية)</label>${inp('turnstileSiteKey', c.turnstileSiteKey, 'dir="ltr" placeholder="0x4AAAA…"')}<span class="help">إذا حطيتيه، حطي المفتاح السري في السيرفر باسم TURNSTILE_SECRET.</span></div>
         <div class="c4"><button class="btn btn-ghost btn-sm" id="testConn">اختبار الاتصال بالسيرفر</button> <span class="mini" id="connOut"></span></div>
       </div></div>
       <div class="card"><h3>الشحن والاستبدال</h3><div class="editor-grid">
@@ -398,22 +441,22 @@
       const out = $('#connOut'); out.textContent = 'جاري الاختبار…';
       try {
         const ping = await api('ping');
-        const adm = await api('adminCheck');
-        out.innerHTML = ping.ok ? `✓ السيرفر شغّال · الدفع الإلكتروني: ${ping.online ? 'مفعّل' : 'غير مفعّل (أضيفي MOYASAR_SECRET_KEY)'} · ${adm.ok ? `الرمز صحيح · إيميل الإشعارات: ${adm.email ? 'مفعّل' : 'غير مضبوط'}` : 'الرمز: ' + adm.error}` : '✗ ' + ping.error;
+        const adm = LS.get(K.token, '') ? await api('adminCheck') : { ok: false, error: 'اكتبي الرمز في تبويب الطلبات أولاً' };
+        out.innerHTML = ping.ok ? `✓ السيرفر شغّال · الدفع الإلكتروني: ${ping.online ? 'مفعّل' : 'غير مفعّل (أضيفي MOYASAR_SECRET_KEY)'} · الحماية من السبام: ${ping.captcha ? 'مفعّلة' : 'غير مفعّلة'} · ${adm.ok ? `الرمز صحيح · إيميل الإشعارات: ${adm.email ? 'مفعّل' : 'غير مضبوط'}` : 'الرمز: ' + adm.error}` : '✗ ' + ping.error;
       } catch (e) { out.textContent = '✗ تعذر الاتصال — تأكدي من الرابط'; }
     };
   }
   const couponRow = c => `<div class="coupon-r"><input class="input" data-cp="code" value="${esc(c.code)}" placeholder="الكود" dir="ltr" style="text-transform:uppercase">
     <select class="select" data-cp="type"><option value="percent" ${c.type === 'percent' ? 'selected' : ''}>نسبة ٪</option><option value="fixed" ${c.type === 'fixed' ? 'selected' : ''}>مبلغ ر.س</option></select>
     <input class="input" data-cp="value" type="number" value="${esc(c.value)}" placeholder="القيمة"><input class="input" data-cp="minSubtotal" type="number" value="${esc(c.minSubtotal || 0)}" placeholder="أقل مبلغ">
-    <label class="mini"><input type="checkbox" data-cp="active" ${c.active !== false ? 'checked' : ''}> فعّال</label><label class="mini"><input type="checkbox" data-cp="showOnHome" ${c.showOnHome ? 'checked' : ''}> بالرئيسية</label>
+    <label class="mini"><input type="checkbox" data-cp="active" ${c.active !== false ? 'checked' : ''}> فعّال</label><label class="mini"><input type="checkbox" data-cp="showOnHome" ${c.showOnHome ? 'checked' : ''}> بالرئيسية</label><label class="mini"><input type="checkbox" data-cp="firstOrderOnly" ${c.firstOrderOnly ? 'checked' : ''}> لأول طلب فقط</label>
     <button type="button" class="icon-btn" data-rmcp aria-label="حذف">✕</button></div>`;
   function collectSettings() {
     const c = data.config;
     $$('[data-cfg]').forEach(el => {
       const k = el.dataset.cfg;
       if (k === 'codEnabled') c[k] = !!el.value;
-      else if (['codFee', 'shippingFee', 'freeShippingOver', 'returnsDays'].includes(k)) c[k] = Number(el.value) || 0;
+      else if (['codFee', 'shippingFee', 'freeShippingOver', 'returnsDays'].includes(k)) c[k] = Math.max(0, Number(el.value) || 0);
       else c[k] = el.value.trim();
     });
     c.contact = c.contact || {}; c.legal = c.legal || {};
@@ -424,8 +467,9 @@
       const g = k => $(`[data-cp="${k}"]`, r);
       const cp = { code: g('code').value.trim().toUpperCase(), type: g('type').value, value: Number(g('value').value) || 0, minSubtotal: Number(g('minSubtotal').value) || 0, active: g('active').checked };
       if (g('showOnHome').checked) cp.showOnHome = true;
+      if (g('firstOrderOnly').checked) cp.firstOrderOnly = true;
       const prev = (data.config.coupons || []).find(x => x.code === cp.code);
-      if (prev && prev.headline) cp.headline = prev.headline;
+      if (prev && prev.headline && prev.type === cp.type && Number(prev.value) === cp.value) cp.headline = prev.headline;
       return cp;
     }).filter(cp => cp.code && cp.value > 0);
     if (c.moyasarPublishableKey && !/^pk_(live|test)_/.test(c.moyasarPublishableKey) && c.moyasarPublishableKey !== 'pk_mock') toast('تنبيه: مفتاح ميسر العام يبدأ بـ pk_live_ أو pk_test_');

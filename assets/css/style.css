@@ -90,7 +90,11 @@ input, select, textarea { font: inherit; color: inherit; }
 .header-actions { display: flex; align-items: center; justify-content: flex-end; gap: .25rem; }
 .burger { display: none; }
 
-.search-panel { position: fixed; inset: 0 0 auto; z-index: 90; background: var(--ivory); padding: 22px 0 28px; box-shadow: var(--shadow-lg); transform: translateY(-110%); transition: transform .3s ease; }
+.mnav { position: fixed; top: 0; bottom: 0; inset-inline-start: 0; width: min(320px, 86vw); z-index: 100; background: var(--ivory); display: flex; flex-direction: column; padding: 1rem 1.4rem 2rem; transform: translateX(100%); transition: transform .35s cubic-bezier(.22, 1, .36, 1); box-shadow: var(--shadow-lg); overflow-y: auto; }
+.mnav.open { transform: none; }
+.mnav-head { display: flex; justify-content: space-between; align-items: center; padding-bottom: .8rem; margin-bottom: .4rem; border-bottom: 1px solid var(--line); }
+.mnav a { font-size: 1.08rem; padding: .85rem 0; border-bottom: 1px solid var(--line); }
+.search-panel { position: fixed; inset: 0 0 auto; z-index: 96; background: var(--ivory); padding: 22px 0 28px; box-shadow: var(--shadow-lg); transform: translateY(-110%); transition: transform .3s ease; }
 .search-panel.open { transform: none; }
 .search-row { display: flex; gap: .6rem; align-items: center; }
 .search-row .input { font-size: 1.1rem; min-height: 54px; }
@@ -408,11 +412,7 @@ input, select, textarea { font: inherit; color: inherit; }
   .header-inner { grid-template-columns: auto 1fr auto; }
   .logo { justify-self: center; }
   .burger { display: grid; }
-  .nav { position: fixed; top: 0; bottom: 0; inset-inline-start: 0; width: min(320px, 86vw); z-index: 100; background: var(--ivory); flex-direction: column; align-items: stretch; gap: 0; padding: 4.5rem 1.4rem 2rem; transform: translateX(100%); transition: transform .35s cubic-bezier(.22, 1, .36, 1); box-shadow: var(--shadow-lg); }
-  .nav.open { transform: none; }
-  .nav a { font-size: 1.08rem; padding: .85rem 0; border-bottom: 1px solid var(--line); }
-  .nav a::after { display: none; }
-  .nav-close { position: absolute; top: 12px; inset-inline-end: 12px; }
+  .header .nav { display: none; }
   .hero-inner { grid-template-columns: 1fr; min-height: 0; padding-block: 2.2rem 2.8rem; gap: 2rem; }
   .hero-art { max-width: 520px; margin-inline: auto; width: 100%; }
   .trust-grid { grid-template-columns: repeat(2, 1fr); }

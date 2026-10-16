@@ -17,15 +17,23 @@ Sora.ready(() => {
     items_invalid: 'سلتك فاضية.', coupon_invalid: 'كود الخصم غير صحيح.', coupon_min_not_met: 'كود الخصم ما يشمل هالمبلغ.',
     online_payment_disabled: 'الدفع الإلكتروني غير متاح حالياً.', cod_disabled: 'الدفع عند الاستلام غير متاح حالياً.',
     busy_try_again: 'الضغط عالي حالياً — حاولي بعد دقيقة.', backend_not_configured: 'المتجر يستقبل الطلبات قريباً.',
-    amount_too_small: 'مبلغ الطلب صغير جداً.',
+    amount_too_small: 'مبلغ الطلب صغير جداً.', too_many_items: 'الحد 20 قطعة مختلفة في الطلب الواحد.',
+    coupon_first_order_only: 'هذا الكود لأول طلب فقط — وعندك طلب سابق بهالرقم.',
+    captcha_required: 'أكملي خطوة التحقق (أنا لست روبوت) ثم أعيدي المحاولة.', captcha_failed: 'ما نجح التحقق — حدّثي الصفحة وحاولي مرة ثانية.',
   };
   const errMsg = code => ERR[code] || 'صار خطأ بالاتصال — حاولي مرة ثانية.';
-
-  const lines = S.cartLines();
-  if (!lines.length) {
+  const showEmpty = () => {
     $('#checkout').innerHTML = `<div class="center-card" style="grid-column:1/-1"><div class="ico">${I.bag}</div><h1>سلّتك فاضية</h1><p>أضيفي القطع اللي تعجبك وارجعي هنا.</p><a class="btn btn-dark" href="index.html#catalog" style="margin-top:1.4rem">تسوّقي الحين</a></div>`;
-    return;
+  };
+
+  /* drop lines whose colour/size/product no longer exists, and say so */
+  const stale = S.cartLines(true).filter(l => l.unavailable);
+  if (stale.length) {
+    stale.forEach(l => S.setQty(l.key, 0));
+    S.toast('شلنا من سلتك قطع ما عادت متوفرة بنفس اللون أو المقاس');
   }
+  let lines = S.cartLines();
+  if (!lines.length) { showEmpty(); return; }
 
   const mockMode = S.isLocalHost && cfg.moyasarPublishableKey === 'pk_mock';
   const canOnline = !!cfg.moyasarPublishableKey;
@@ -44,6 +52,7 @@ Sora.ready(() => {
     ].filter(Boolean).join('');
   if (!payment || !backend) $('#placeBtn').disabled = true;
   $('#secureLine').innerHTML = `${I.lock} بياناتك محمية — ما نحفظ بيانات البطاقة`;
+  $('#agreeDays').textContent = cfg.shippingDays;
   $('#payOptions').addEventListener('change', e => { if (e.target.name === 'pay') { payment = e.target.value; renderSummary(); } });
 
   /* cities */
@@ -84,6 +93,28 @@ Sora.ready(() => {
     return t;
   }
   renderSummary();
+  /* the cart can change in the drawer on this page or in another tab */
+  document.addEventListener('sora:cart', () => {
+    if (orderLocked) return;
+    lines = S.cartLines();
+    if (!lines.length) showEmpty(); else renderSummary();
+  });
+
+  /* optional anti-bot check (Cloudflare Turnstile) when a site key is configured */
+  let captchaToken = '', captchaWidget = null;
+  if (cfg.turnstileSiteKey && backend) {
+    $('#placeBtn').insertAdjacentHTML('beforebegin', '<div id="tsBox" style="margin-top:1rem"></div>');
+    window.soraTs = () => {
+      captchaWidget = window.turnstile.render('#tsBox', {
+        sitekey: cfg.turnstileSiteKey, language: 'ar',
+        callback: tok => { captchaToken = tok; }, 'expired-callback': () => { captchaToken = ''; },
+      });
+    };
+    const ts = document.createElement('script');
+    ts.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?onload=soraTs&render=explicit';
+    ts.async = true;
+    document.head.appendChild(ts);
+  }
 
   /* validation (mirrors backend rules) */
   const toAscii = s => String(s || '').replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/[۰-۹]/g, d => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d));
@@ -119,8 +150,11 @@ Sora.ready(() => {
     e.preventDefault();
     if (orderLocked) return;
     showError('');
+    lines = S.cartLines();
+    if (!lines.length) { showEmpty(); return; }
     const c = collect();
     if (!validate(c)) return;
+    if (cfg.turnstileSiteKey && !captchaToken) { showError(ERR.captcha_required); return; }
     try { sessionStorage.setItem('sora-co', JSON.stringify({ ...c, phone: c.rawPhone })); } catch (err) { /* ignore */ }
     const t = renderSummary();
     if (coupon && t.couponError) { showError(t.couponError); return; }
@@ -132,7 +166,7 @@ Sora.ready(() => {
       res = await S.api('createOrder', {
         customer: { name: c.name, phone: c.phone, city: c.city, district: c.district, address: c.address, nationalAddress: c.nationalAddress, notes: c.notes },
         items: lines.map(l => ({ id: l.id, color: l.color.name, size: l.size, qty: l.qty })),
-        coupon: t.coupon ? t.coupon.code : '', payment, website: $('#fWebsite').value,
+        coupon: t.coupon ? t.coupon.code : '', payment, website: $('#fWebsite').value, captcha: captchaToken,
       });
     } catch (err) {
       res = { ok: false, error: err.message };
@@ -141,6 +175,7 @@ Sora.ready(() => {
       btn.disabled = false;
       btn.textContent = 'إتمام الطلب';
       showError(errMsg(res && res.error));
+      if (captchaWidget != null && window.turnstile) { window.turnstile.reset(captchaWidget); captchaToken = ''; }
       return;
     }
     if (Math.abs(res.total - t.total) > 0.01) {

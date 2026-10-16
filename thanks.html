@@ -61,14 +61,21 @@ Sora.ready(async () => {
     return;
   }
   let res;
+  const RETRYABLE = ['busy_try_again', 'server_error', 'store_unavailable'];
   for (let attempt = 0; attempt < 3; attempt++) {
-    try { res = await S.api('verifyPayment', { orderId, paymentId }); } catch (e) { res = { ok: false, error: e.message }; }
-    if (res && (res.ok || res.status === 'failed')) break;
+    try { res = await S.api('verifyPayment', { orderId, paymentId }); } catch (e) { res = { ok: false, error: 'network' }; }
+    if (res && (res.ok || (res.status && res.status !== 'not_found') || (res.error && res.error !== 'network' && !RETRYABLE.includes(res.error)))) break;
     await new Promise(r => setTimeout(r, 1500 * (attempt + 1)));
   }
+  const review = id => {
+    box.innerHTML = `<div class="ico">${I.chat}</div><h1>استلمنا دفعتك وتحتاج مراجعة</h1>
+      <p>المبلغ وصلنا لكن ما قدرنا نربطه بطلبك تلقائياً. تم تنبيه فريقنا وبنتواصل معك خلال يوم عمل — ولا تحاولين الدفع مرة ثانية.</p>
+      ${id ? `<div class="order-no">${esc(id)}</div>` : ''}<a class="btn btn-dark" href="policies.html#complaints" style="margin-top:1rem">تواصلي معنا</a>`;
+  };
   if (res && res.ok) success(res.orderId, res.total, false);
-  else if (res && res.error === 'amount_mismatch') failure('مبلغ الدفع ما يطابق الطلب — تواصلي معنا وبنحلها فوراً.');
-  else if (res && res.status === 'failed') failure(res.message ? `رد البنك: ${res.message}` : '');
+  else if (res && res.error === 'payment_needs_review') review(orderId);
+  else if (res && ['payment_order_mismatch', 'payment_reused', 'order_not_found', 'order_invalid', 'payment_invalid'].includes(res.error)) failure('ما قدرنا نربط هالدفعة بطلبك. إذا انخصم المبلغ تواصلي معنا برقم الطلب.');
+  else if (res && res.status && res.status !== 'paid' && res.status !== 'not_found') failure(res.message ? `رد البنك: ${res.message}` : '');
   else box.innerHTML = `<h1>جاري تأكيد الدفع</h1><p>ما قدرنا نتأكد من الدفع الحين — إذا انخصم المبلغ فطلبك محفوظ وبيتأكد تلقائياً خلال دقائق.</p>
     ${orderId ? `<div class="order-no">${esc(orderId)}</div>` : ''}<a class="btn btn-dark" href="${orderId ? 'track.html?order=' + encodeURIComponent(orderId) : 'track.html'}" style="margin-top:1rem">تتبّعي الطلب</a>`;
 });

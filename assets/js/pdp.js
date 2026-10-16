@@ -78,7 +78,7 @@ Sora.ready(() => {
       <button class="btn btn-plum btn-block" id="buyNow">اشتري الآن</button>
 
       <div class="pdp-perks">
-        <div>${I.truck}<span>يوصلك خلال <b>${esc(cfg.shippingDays)} يوم</b> · شحن مجاني فوق ${S.fmt(cfg.freeShippingOver)} ر.س</span></div>
+        <div>${I.truck}<span>يوصلك خلال <b>${esc(cfg.shippingDays)} يوم</b> ${S.freeOver() ? ` · شحن مجاني فوق ${S.fmt(S.freeOver())} ر.س` : ''}</span></div>
         <div>${I.swap}<span>استبدال أو استرجاع خلال ${esc(cfg.returnsDays)} أيام من الاستلام</span></div>
         <div>${I.shield}<span>دفع آمن: مدى · Apple Pay · بطاقات${cfg.codEnabled ? ' · عند الاستلام' : ''}</span></div>
       </div>
@@ -86,7 +86,7 @@ Sora.ready(() => {
       <div class="acc">
         <details open><summary>الوصف والتفاصيل</summary><div class="acc-body"><p>${esc(p.desc)}</p>${(p.details || []).length ? `<ul style="margin-top:.6rem">${p.details.map(d => `<li>${esc(d)}</li>`).join('')}</ul>` : ''}</div></details>
         <details><summary>الخامة والعناية</summary><div class="acc-body"><p><b>الخامة:</b> ${esc(p.fabric || '—')}</p><p><b>العناية:</b> ${esc(p.care || '—')}</p></div></details>
-        <details><summary>الشحن والاستبدال</summary><div class="acc-body"><p>نجهّز طلبك خلال 1-3 أيام ويوصلك خلال ${esc(cfg.shippingDays)} يوم مع رقم تتبّع. رسوم الشحن ${S.fmt(cfg.shippingFee)} ر.س ومجاني فوق ${S.fmt(cfg.freeShippingOver)} ر.س. <a href="policies.html#returns" style="text-decoration:underline">سياسة الاستبدال</a></p></div></details>
+        <details><summary>الشحن والاستبدال</summary><div class="acc-body"><p>نجهّز طلبك خلال 1-3 أيام ويوصلك خلال ${esc(cfg.shippingDays)} يوم مع رقم تتبّع. رسوم الشحن ${S.fmt(cfg.shippingFee)} ر.س${S.freeOver() ? ` ومجاني فوق ${S.fmt(S.freeOver())} ر.س` : ''}. <a href="policies.html#returns" style="text-decoration:underline">سياسة الاستبدال</a></p></div></details>
       </div>
     </div>`;
 

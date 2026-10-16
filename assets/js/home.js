@@ -126,7 +126,7 @@ Sora.ready(() => {
     ['وش طرق الدفع؟', `مدى، Apple Pay، فيزا وماستركارد عبر بوابة دفع سعودية آمنة${cfg.codEnabled ? '، والدفع عند الاستلام برسوم ' + esc(cfg.codFee) + ' ر.س' : ''}.`],
     ['كيف أعرف مقاسي؟', 'كل قطعة فيها «دليل المقاسات» بالسنتيمتر. للعبايات والإسدال المقاس هو الطول (52 إلى 60). وإذا احترتي بين مقاسين اختاري الأكبر.'],
     ['أقدر أستبدل أو أرجّع؟', `إيه، خلال ${esc(cfg.returnsDays)} أيام من الاستلام إذا القطعة بحالتها الأصلية مع البطاقة. التفاصيل في سياسة الاستبدال والاسترجاع.`],
-    ['كم الشحن؟', `${esc(cfg.shippingFee)} ر.س، ومجاني للطلبات فوق ${esc(cfg.freeShippingOver)} ر.س.`],
+    ['كم الشحن؟', `${esc(cfg.shippingFee)} ر.س${S.freeOver() ? `، ومجاني للطلبات فوق ${esc(S.freeOver())} ر.س` : ''}.`],
   ];
   $('#faqList').innerHTML = faq.map(([q, a]) => `<details class="reveal"><summary>${q}</summary><p>${a}</p></details>`).join('') +
     '<details class="reveal"><summary>كيف أتابع طلبي؟</summary><p>من صفحة <a href="track.html" style="text-decoration:underline">تتبّع طلبك</a> برقم الطلب ورقم جوالك.</p></details>';

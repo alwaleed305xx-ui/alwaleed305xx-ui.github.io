@@ -47,9 +47,7 @@
               vals.forEach((rv, i) => rv.forEach((v, j) => {
                 const ri = r - 1 + i, ci = c - 1 + j;
                 while (rows().length <= ri) rows().push([]);
-                let s = v == null ? '' : String(v);
-                if (s.charAt(0) === "'") s = s.slice(1);
-                rows()[ri][ci] = s;
+                rows()[ri][ci] = v == null ? '' : String(v);   // plain-text ('@') cells keep values verbatim
               }));
               persist();
               return range;
@@ -99,6 +97,8 @@
     },
     Utilities: {
       base64Encode: s => btoa(s),
+      newBlob: s => ({ getBytes: () => Array.from(new TextEncoder().encode(String(s))) }),
+      getUuid: () => crypto.randomUUID(),
       formatDate: (d, tz, fmt) => {
         const parts = {};
         new Intl.DateTimeFormat('en-GB', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })
@@ -129,7 +129,7 @@
     },
     /* simulates the Moyasar hosted form creating a payment */
     mockPay: ({ amount, currency, metadata, status, sourceType }) => {
-      const id = 'mock' + Math.random().toString(36).slice(2, 12) + Date.now().toString(36);
+      const id = crypto.randomUUID();
       const pays = load(K.pays, {});
       pays[id] = { id, status: status || 'paid', amount, currency: currency || 'SAR', metadata: metadata || {}, source: { type: sourceType || 'mada', message: status === 'failed' ? 'INSUFFICIENT FUNDS' : 'APPROVED' } };
       save(K.pays, pays);
