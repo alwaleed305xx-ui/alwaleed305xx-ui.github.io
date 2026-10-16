@@ -1310,3 +1310,96 @@ function setupCheck() {
   console.log(JSON.stringify(report, null, 2));
   return report;
 }
+
+/* ───────────── one-click setup from the Google Sheet: menu «⚙️ Sora» ───────────── */
+
+var DEFAULT_SITE = 'https://alwaleed305xx-ui.github.io';
+
+function onOpen() {
+  SpreadsheetApp.getUi().createMenu('⚙️ Sora')
+    .addItem('1) تجهيز المتجر (أول مرة)', 'soraSetup')
+    .addItem('2) ربط CJ (مفتاح API)', 'soraConnectCj')
+    .addItem('3) تشغيل CJ الحقيقي (إنهاء وضع التجربة)', 'soraCjLive')
+    .addItem('4) ربط ميسّر (الدفع)', 'soraMoyasar')
+    .addSeparator()
+    .addItem('عرض رمز الدخول للوحة التحكم', 'soraShowToken')
+    .addItem('فحص الإعداد', 'soraCheck')
+    .addToUi();
+}
+
+function ui_() { try { return SpreadsheetApp.getUi(); } catch (e) { return null; } }
+function say_(title, text) {
+  console.log(title + '\n' + text);
+  var u = ui_();
+  if (u) u.alert(title, text, u.ButtonSet.OK);
+}
+function ask_(title, text) {
+  var u = ui_();
+  if (!u) { console.log('Run this from the sheet menu «⚙️ Sora»'); return null; }
+  var r = u.prompt(title, text, u.ButtonSet.OK_CANCEL);
+  return r.getSelectedButton() === u.Button.OK ? String(r.getResponseText() || '').trim() : null;
+}
+
+/* sets SITE_URL, OWNER_EMAIL, ADMIN_TOKEN and the sheets in one go, and shows the admin code */
+function soraSetup() {
+  var props = PropertiesService.getScriptProperties();
+  if (!prop_('SITE_URL')) props.setProperty('SITE_URL', DEFAULT_SITE);
+  if (!prop_('OWNER_EMAIL')) {
+    try { var me = Session.getEffectiveUser().getEmail(); if (me) props.setProperty('OWNER_EMAIL', me); } catch (e) { /* no email scope */ }
+  }
+  var token = generateAdminToken();
+  sheet_(SHEET_ORDERS, ORDER_HEADERS);
+  sheet_(SHEET_SUPPLIERS, SUPPLIER_HEADERS);
+  var n;
+  try { n = fetchStore_(true).products.length + ' منتج ✓'; } catch (e) { n = 'تعذر قراءة المتجر (' + e.message + ')'; }
+  say_('✓ المتجر جاهز', 'رمز الدخول للوحة التحكم — انسخه واحفظه:\n\n' + token +
+    '\n\nإيميل الإشعارات: ' + (prop_('OWNER_EMAIL') || 'غير محدد') + '\nبيانات المتجر: ' + n +
+    '\n\nتقدر تشوف الرمز مرة ثانية من القائمة: ⚙️ Sora ← عرض رمز الدخول.');
+}
+
+function soraShowToken() { say_('رمز الدخول للوحة التحكم', prop_('ADMIN_TOKEN') || 'ما فيه رمز للحين — شغّل «1) تجهيز المتجر» أول.'); }
+
+/* saves the CJ key, starts in test mode the first time, installs the timers and checks the connection */
+function soraConnectCj() {
+  var key = ask_('ربط CJ', 'الصق مفتاح API من CJ\n(My CJ ← Authorization ← API ← عمود API Key):');
+  if (key == null) return;
+  if (key.length < 10) { say_('المفتاح ناقص', 'انسخ المفتاح كامل وحاول مرة ثانية.'); return; }
+  var props = PropertiesService.getScriptProperties();
+  props.setProperty('CJ_API_KEY', key);
+  props.deleteProperty('CJ_TOKEN');
+  if (props.getProperty('CJ_SANDBOX') === null) props.setProperty('CJ_SANDBOX', '1');
+  installTriggers();
+  var s = cjStatus_();
+  if (!s.connected) { say_('✗ ما اتصل بـ CJ', 'السبب: ' + s.error + '\nتأكد من المفتاح (وإن تطبيق API مثبّت في CJ) وجرّب مرة ثانية.'); return; }
+  say_('✓ CJ متصل', 'رصيد المحفظة: ' + s.balanceUsd + '$\n' +
+    (s.sandbox ? 'الوضع الحالي: تجربة — الطلبات تنرسل لـ CJ كتجربة، ما ينخصم شي وما تنشحن.\nبعد ما تجرب طلب كامل من المتجر: ⚙️ Sora ← «3) تشغيل CJ الحقيقي».' : 'الوضع: حقيقي — الطلبات المدفوعة تنطلب وتنشحن تلقائياً.'));
+}
+
+function soraCjLive() {
+  if (!prop_('CJ_API_KEY')) { say_('CJ مو مربوط', 'شغّل «2) ربط CJ» أول.'); return; }
+  var u = ui_();
+  if (u && u.alert('تشغيل CJ الحقيقي', 'من الآن كل طلب مدفوع ينطلب من CJ ويندفع من رصيد محفظتك فعلياً. نكمل؟', u.ButtonSet.YES_NO) !== u.Button.YES) return;
+  PropertiesService.getScriptProperties().setProperty('CJ_SANDBOX', '0');
+  installTriggers();
+  var s = cjStatus_();
+  say_('✓ صار حقيقي', 'الطلبات المدفوعة تنرسل لـ CJ تلقائياً خلال 5 دقائق.\nرصيد المحفظة الحالي: ' + s.balanceUsd + '$');
+}
+
+/* stores Moyasar's secret key and prepares the webhook secret + URL to paste into Moyasar */
+function soraMoyasar() {
+  var sk = ask_('ربط ميسّر', 'الصق المفتاح السري من لوحة ميسّر (يبدأ بـ sk_live_ أو sk_test_):');
+  if (sk == null) return;
+  if (!/^sk_(live|test)_/.test(sk)) { say_('مفتاح غير صحيح', 'لازم يبدأ بـ sk_live_ أو sk_test_ (المفتاح العام pk_ يروح في لوحة التحكم، مو هنا).'); return; }
+  var props = PropertiesService.getScriptProperties();
+  props.setProperty('MOYASAR_SECRET_KEY', sk);
+  if (!prop_('MOYASAR_WEBHOOK_SECRET')) props.setProperty('MOYASAR_WEBHOOK_SECRET', (Utilities.getUuid() + Utilities.getUuid()).replace(/-/g, '').slice(0, 32));
+  var url = '';
+  try { url = ScriptApp.getService().getUrl() || ''; } catch (e) { url = ''; }
+  say_('✓ انحفظ مفتاح ميسّر', 'في لوحة ميسّر ← Webhooks ← أضف:\n\nالرابط:\n' + (url ? url + '?action=moyasarWebhook' : '(سوّ Deploy أول ثم افتح هذي الخطوة مرة ثانية)') +
+    '\n\nالحدث: payment_paid\nSecret token:\n' + prop_('MOYASAR_WEBHOOK_SECRET') + '\n\nوالمفتاح العام pk_ حطّه في لوحة التحكم ← الإعدادات والنشر.');
+}
+
+function soraCheck() {
+  var r = setupCheck();
+  say_('فحص الإعداد', Object.keys(r).map(function (k) { return k + ': ' + r[k]; }).join('\n'));
+}
