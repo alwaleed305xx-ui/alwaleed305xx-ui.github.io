@@ -98,14 +98,33 @@ Sora.ready(() => {
       g.innerHTML = `<div class="stage">${S.media(p, sel.color, { eager: true })}</div>`;
       return;
     }
-    sel.img = Math.min(sel.img, imgs.length - 1);
-    g.className = imgs.length > 1 ? 'gallery' : 'gallery single';
-    g.innerHTML = (imgs.length > 1 ? `<div class="thumbs">${imgs.map((u, i) => `<button class="${i === sel.img ? 'on' : ''}" data-img="${i}" aria-label="صورة ${i + 1}"><img src="${esc(u)}" alt="" loading="lazy" referrerpolicy="no-referrer"></button>`).join('')}</div>` : '') +
-      `<div class="stage"><img src="${esc(imgs[sel.img])}" alt="${esc(p.name)} — ${esc(sel.color)}" referrerpolicy="no-referrer"></div>`;
+    sel.img = Math.max(0, Math.min(sel.img, imgs.length - 1));
+    const many = imgs.length > 1;
+    g.className = many ? 'gallery' : 'gallery single';
+    g.innerHTML = (many ? `<div class="thumbs">${imgs.map((u, i) => `<button class="${i === sel.img ? 'on' : ''}" data-img="${i}" aria-label="صورة ${i + 1}">${S.imgTag(p, u, sel.color)}</button>`).join('')}</div>` : '') +
+      `<div class="stage photo" id="stage">${S.imgTag(p, imgs[sel.img], sel.color, { eager: true })}
+        ${many ? `<button class="stage-nav prev" data-step="-1" aria-label="الصورة السابقة">›</button><button class="stage-nav next" data-step="1" aria-label="الصورة التالية">‹</button>
+        <div class="stage-dots">${imgs.map((_, i) => `<i class="${i === sel.img ? 'on' : ''}"></i>`).join('')}</div>` : ''}</div>`;
+    const stage = $('#stage');
+    let x0 = null;
+    stage.addEventListener('touchstart', e => { x0 = e.touches[0].clientX; }, { passive: true });
+    stage.addEventListener('touchend', e => {
+      if (x0 == null || !many) return;
+      const dx = e.changedTouches[0].clientX - x0; x0 = null;
+      if (Math.abs(dx) > 40) step(dx > 0 ? 1 : -1);   // RTL: swipe right = next
+    });
+  }
+  function step(d) {
+    const n = S.imagesFor(p, sel.color).length;
+    if (n < 2) return;
+    sel.img = (sel.img + d + n) % n;
+    renderGallery();
   }
   renderGallery();
 
   $('#pdp').addEventListener('click', e => {
+    const st = e.target.closest('[data-step]');
+    if (st) { step(Number(st.dataset.step)); return; }
     const t = e.target.closest('[data-color],[data-size],[data-img]');
     if (!t) return;
     if (t.dataset.color) {

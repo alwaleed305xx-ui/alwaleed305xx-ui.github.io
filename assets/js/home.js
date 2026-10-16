@@ -15,11 +15,20 @@ Sora.ready(() => {
     [I.shield, 'دفع آمن: مدى · أبل باي'],
     [I.swap, `استبدال خلال ${esc(cfg.returnsDays)} أيام`],
   ].map(([i, t]) => `<span>${i}${t}</span>`).join('');
+  /* the first product photo of a category (featured first), or null */
+  const photoOf = catId => {
+    const list = S.products.filter(p => p.cat === catId && (p.images || []).length);
+    const p = list.find(x => x.featured) || list[0];
+    return p ? { p, src: p.images[0] } : null;
+  };
   $('#heroArt').innerHTML = [
     ['abaya', '#1c1b1d', 'عبايات', 'abayas'],
     ['maxi', '#c99a94', 'فساتين', 'dresses'],
     ['set', '#7f8f74', 'رياضي', 'sport'],
-  ].map(([t, c, label]) => `<div class="arch">${Garment.svg(t, c)}<span class="arch-tag">${label}</span></div>`).join('');
+  ].map(([t, c, label, cat]) => {
+    const ph = photoOf(cat);
+    return `<a class="arch${ph ? ' has-photo' : ''}" href="index.html?cat=${cat}#catalog">${ph ? S.imgTag(ph.p, ph.src, '', { eager: true }) : Garment.svg(t, c)}<span class="arch-tag">${label}</span></a>`;
+  }).join('');
 
   /* trust */
   $('#trust').innerHTML = [
@@ -34,7 +43,7 @@ Sora.ready(() => {
   S.products.forEach(p => { counts[p.cat] = (counts[p.cat] || 0) + 1; });
   $('#catRail').innerHTML = S.cats.filter(c => counts[c.id]).map(c => `
     <a class="cat-tile reveal" href="index.html?cat=${esc(c.id)}#catalog" data-cat="${esc(c.id)}">
-      <span class="cat-art">${Garment.svg(c.type, c.hex, { accent: c.accent })}</span>
+      <span class="cat-art${photoOf(c.id) ? ' has-photo' : ''}">${photoOf(c.id) ? S.imgTag(photoOf(c.id).p, photoOf(c.id).src, '') : Garment.svg(c.type, c.hex, { accent: c.accent })}</span>
       <b>${esc(c.name)}</b><small>${counts[c.id]} قطعة</small>
     </a>`).join('');
 
@@ -52,7 +61,10 @@ Sora.ready(() => {
   } else {
     $('.promo').closest('.section').hidden = true;
   }
-  $('#promoArt').innerHTML = Garment.svg('gown', '#5e2b48') + Garment.svg('kaftan', '#efe8dc', { accent: '#a9874f' });
+  const promoPics = ['evening', 'kaftan'].map(photoOf).filter(Boolean);
+  $('#promoArt').innerHTML = promoPics.length === 2
+    ? promoPics.map(ph => `<span class="promo-photo">${S.imgTag(ph.p, ph.src, '')}</span>`).join('')
+    : Garment.svg('gown', '#5e2b48') + Garment.svg('kaftan', '#efe8dc', { accent: '#a9874f' });
   $('#copyCode').addEventListener('click', () => {
     const code = $('#promoCode').firstChild.textContent.trim();
     (navigator.clipboard ? navigator.clipboard.writeText(code) : Promise.reject()).then(

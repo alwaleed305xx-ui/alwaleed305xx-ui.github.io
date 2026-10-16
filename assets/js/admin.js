@@ -367,6 +367,8 @@
         <div class="field"><label>رسوم بوابة الدفع (٪)</label><input class="input" id="feePct" type="number" step="0.1" value="${fee().pct}" style="width:120px"></div>
         <div class="field"><label>رسوم ثابتة لكل عملية (ر.س)</label><input class="input" id="feeFixed" type="number" step="0.1" value="${fee().fixed}" style="width:120px"></div>
         <button class="btn btn-dark btn-sm" id="saveSup" style="align-self:flex-end">حفظ ومزامنة مع السيرفر</button>
+        <button class="btn btn-ghost btn-sm" id="importSup" style="align-self:flex-end">استيراد ملف الموردين</button>
+        <input type="file" id="importSupFile" accept=".json" hidden>
       </div><p class="help">الربح هنا = سعر البيع − تكلفة المورد − رسوم الدفع، وقبل تكلفة الإعلانات. الشحن اللي تدفعه الزبونة يغطي فرق الشحن.</p></div>
       <div style="overflow-x:auto"><table class="tbl"><thead><tr><th>المنتج</th><th>سعر البيع</th><th>المورد</th><th>رابط المنتج عند المورد</th><th>التكلفة</th><th>ربح القطعة</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>`;
     $('#tab-suppliers').oninput = ev => {
@@ -376,6 +378,25 @@
       suppliers[id] = Object.assign({ supplier: '', url: '', cost: 0, notes: '' }, suppliers[id] || {});
       suppliers[id][i.dataset.k] = i.dataset.k === 'cost' ? Number(i.value) || 0 : i.value.trim();
       markSup(id);
+    };
+    $('#importSup').onclick = () => $('#importSupFile').click();
+    $('#importSupFile').onchange = ev => {
+      const file = ev.target.files[0]; if (!file) return;
+      file.text().then(async t => {
+        const map = JSON.parse(t);
+        const ids = Object.keys(map).filter(id => map[id] && typeof map[id] === 'object');
+        if (!ids.length) throw new Error('empty');
+        ids.forEach(id => {
+          const s = map[id];
+          suppliers[String(id)] = { supplier: String(s.supplier || ''), url: String(s.url || ''), cost: Number(s.cost) || 0, notes: String(s.notes || '') };
+          supDirty.add(String(id)); supRemoved.delete(String(id));
+        });
+        saveSupLocal();
+        toast(`انستورد ${ids.length} مورد ✓`);
+        await syncSuppliers(true);
+        renderSuppliers();
+      }).catch(() => toast('الملف غير صالح'));
+      ev.target.value = '';
     };
     $('#saveSup').onclick = async () => {
       LS.set(K.fee, { pct: Number($('#feePct').value) || 0, fixed: Number($('#feeFixed').value) || 0 });

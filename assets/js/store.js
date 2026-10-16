@@ -78,19 +78,30 @@
   S.offPct = p => (p.old && p.old > p.price ? Math.round((1 - p.price / p.old) * 100) : 0);
   S.colorOf = (p, name) => (p.colors || []).find(c => c.name === name) || (p.colors || [])[0] || { name: '', hex: '#1c1b1d' };
 
+  /* the selected colour's own photos come first, then the shared gallery */
   S.imagesFor = (p, colorName) => {
-    const per = p.colorImages && colorName && p.colorImages[colorName];
-    if (Array.isArray(per) && per.length) return per;
-    return Array.isArray(p.images) ? p.images.filter(Boolean) : [];
+    const per = (p.colorImages && colorName && p.colorImages[colorName]) || [];
+    const all = (Array.isArray(per) ? per : []).concat(Array.isArray(p.images) ? p.images : []).filter(Boolean);
+    return [...new Set(all)];
   };
+  const svgFor = (p, colorName) => window.Garment.svg(p.type, S.colorOf(p, colorName).hex, { label: p.name, accent: p.accent });
+  /* a supplier photo that fails to load falls back to the illustration */
+  S.imgFail = img => {
+    const p = S.product(img.dataset.pid) || (state.data.products || []).find(x => String(x.id) === img.dataset.pid);
+    if (!p) { img.remove(); return; }
+    const holder = document.createElement('span');
+    holder.className = 'img-fallback';
+    holder.innerHTML = svgFor(p, img.dataset.color);
+    img.replaceWith(holder);
+  };
+  S.imgTag = (p, src, colorName, opts) => `<img src="${esc(src)}" alt="${esc(p.name)}" loading="${opts && opts.eager ? 'eager' : 'lazy'}" decoding="async" referrerpolicy="no-referrer" data-pid="${esc(p.id)}" data-color="${esc(colorName || '')}" onerror="Sora.imgFail(this)"${opts && opts.cls ? ` class="${opts.cls}"` : ''}>`;
   S.media = (p, colorName, opts) => {
     opts = opts || {};
     const imgs = S.imagesFor(p, colorName);
-    if (imgs.length) {
-      return `<img src="${esc(imgs[0])}" alt="${esc(p.name)}" loading="${opts.eager ? 'eager' : 'lazy'}" decoding="async" referrerpolicy="no-referrer">`;
-    }
-    const c = S.colorOf(p, colorName);
-    return window.Garment.svg(p.type, c.hex, { label: p.name, accent: p.accent });
+    if (!imgs.length) return svgFor(p, colorName);
+    let html = S.imgTag(p, imgs[0], colorName, opts);
+    if (opts.hover && imgs[1]) html += S.imgTag(p, imgs[1], colorName, { cls: 'img-alt' });
+    return html;
   };
 
   /* ───── favourites ───── */
@@ -217,7 +228,7 @@
     const b = p.badge && BADGE[p.badge] ? `<span class="p-badge ${BADGE[p.badge][0]}">${BADGE[p.badge][1]}</span>` : '';
     const sw = (p.colors || []).slice(0, 5).map(c => `<i style="background:${esc(c.hex)}" title="${esc(c.name)}"></i>`).join('');
     return `<article class="p-card reveal">
-      <a class="p-media" href="${S.productUrl(p)}" aria-label="${esc(p.name)}">${b}${S.media(p, c0.name)}</a>
+      <a class="p-media" href="${S.productUrl(p)}" aria-label="${esc(p.name)}">${b}${S.media(p, c0.name, { hover: true })}</a>
       <button class="p-fav ${S.isFav(p.id) ? 'on' : ''}" data-fav="${esc(p.id)}" aria-label="أضيفي للمفضلة">${I.heart}</button>
       <div class="p-info">
         <a class="p-name" href="${S.productUrl(p)}">${esc(p.name)}</a>

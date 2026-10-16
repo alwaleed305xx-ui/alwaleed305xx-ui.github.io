@@ -127,39 +127,86 @@
       ],
       "colors": [
         {
-          "name": "وردي باودر",
-          "hex": "#c99a94"
+          "name": "أسود",
+          "hex": "#1a1a1a"
         },
         {
-          "name": "أسود",
-          "hex": "#1c1b1d"
+          "name": "وردي باودر",
+          "hex": "#c98a8f"
         },
         {
           "name": "زيتي",
-          "hex": "#6e7a55"
+          "hex": "#3f4232"
         },
         {
-          "name": "كحلي",
-          "hex": "#1f2a44"
+          "name": "عنابي",
+          "hex": "#6e1f2c"
+        },
+        {
+          "name": "بني قهوة",
+          "hex": "#5c3d2e"
+        },
+        {
+          "name": "موف",
+          "hex": "#8a5a6a"
+        },
+        {
+          "name": "رمادي",
+          "hex": "#6b6e78"
+        },
+        {
+          "name": "بيج فاتح",
+          "hex": "#d8c3a5"
         }
       ],
-      "desc": "فستان ماكسي محتشم بقصّة A واسعة، أكمام طويلة وحزام على الخصر يبرز القوام. يناسب الدوام والطلعات والجمعات.",
+      "desc": "فستان/عباية ماكسي سادة مقفل بالكامل بأكمام طويلة واسعة وحزام ربط على الخصر، قصّة واسعة منسدلة حتى الكاحل، قماش غير شفاف. القطعة فستان فقط بدون طرحة.",
       "details": [
-        "طول كامل للكاحل",
-        "أكمام طويلة بأساور",
-        "حزام قابل للفك",
-        "بدون شفافية"
+        "فستان/عباية ماكسي سادة مقفل بالكامل بأكمام طويلة واسعة وحزام ربط على الخصر، قصّة واسعة منسدلة حتى الكاحل، قماش غير شفاف",
+        "القطعة فستان فقط بدون طرحة"
       ],
-      "fabric": "كريب ناعم مطاطي خفيف",
+      "fabric": "حسب وصف القطعة",
       "care": "غسيل يدوي أو دورة لطيفة بماء بارد، كي على حرارة منخفضة",
-      "images": [],
-      "show": true
+      "images": [
+        "https://ae-pic-a1.aliexpress-media.com/kf/Se8f8678a13f143cd962bd06dcc2070c3d.jpg",
+        "https://ae-pic-a1.aliexpress-media.com/kf/Se2d5f138e1824291932cdc722106a235E.jpg",
+        "https://ae-pic-a1.aliexpress-media.com/kf/Sa03ab9e25bde4634b739eed7993ca5ecN.jpg",
+        "https://ae-pic-a1.aliexpress-media.com/kf/S99ab0a0cea2f4c83a3ac67dcef5d0ab96.jpg",
+        "https://ae-pic-a1.aliexpress-media.com/kf/Sce0b67eb68d94c3aa570942a5517bb849.jpg",
+        "https://ae-pic-a1.aliexpress-media.com/kf/Seeabbcdbf221496d996ad9aa59cd0ba5R.jpg"
+      ],
+      "show": true,
+      "colorImages": {
+        "أسود": [
+          "https://ae-pic-a1.aliexpress-media.com/kf/Se2d5f138e1824291932cdc722106a235E.jpg"
+        ],
+        "وردي باودر": [
+          "https://ae-pic-a1.aliexpress-media.com/kf/Se1caee26dc51431c8987cb247c28f5a9k.jpg"
+        ],
+        "زيتي": [
+          "https://ae-pic-a1.aliexpress-media.com/kf/Sa03ab9e25bde4634b739eed7993ca5ecN.jpg"
+        ],
+        "عنابي": [
+          "https://ae-pic-a1.aliexpress-media.com/kf/S6a4f1932790343ef8dabeb534db54460n.jpg"
+        ],
+        "بني قهوة": [
+          "https://ae-pic-a1.aliexpress-media.com/kf/S384275b98be74d7aa9a0c4e6e53d1bb0G.jpg"
+        ],
+        "موف": [
+          "https://ae-pic-a1.aliexpress-media.com/kf/S82428a581f88457ebe8cde309be2666fS.jpg"
+        ],
+        "رمادي": [
+          "https://ae-pic-a1.aliexpress-media.com/kf/Sbb30c7f5457e4bf1bf1d144f37150ae7R.jpg"
+        ],
+        "بيج فاتح": [
+          "https://ae-pic-a1.aliexpress-media.com/kf/S8084636510de44bba57059c16c99f49ai.jpg"
+        ]
+      }
     },
     {
       "id": 2,
       "cat": "dresses",
       "type": "wrap",
-      "name": "فستان لف ميدي بأكمام قصيرة",
+      "name": "فستان سوينغ بحزام وأكمام قصيرة",
       "price": 149,
       "old": 189,
       "badge": "new",
@@ -168,39 +215,85 @@
         "S",
         "M",
         "L",
-        "XL"
+        "XL",
+        "2XL"
       ],
       "colors": [
         {
           "name": "أخضر زمردي",
-          "hex": "#1f6b57"
+          "hex": "#2e9a4e"
         },
         {
           "name": "عنابي",
-          "hex": "#6d1f2f"
+          "hex": "#8a1a2a"
         },
         {
           "name": "أسود",
-          "hex": "#1c1b1d"
+          "hex": "#151515"
+        },
+        {
+          "name": "بنفسجي",
+          "hex": "#8a3fbf"
+        },
+        {
+          "name": "وردي",
+          "hex": "#f0a0b4"
+        },
+        {
+          "name": "أزرق سماوي",
+          "hex": "#8fd0f0"
+        },
+        {
+          "name": "مرجاني",
+          "hex": "#f0604a"
+        },
+        {
+          "name": "أزرق ملكي",
+          "hex": "#1f3a9a"
         }
       ],
-      "desc": "فستان لف (Wrap) بطول ميدي وربطة جانبية، قصّته تناسب أغلب الأجسام وتعطي حركة جميلة.",
+      "desc": "فستان كلاسيكي سادة بقصة سوينغ واسعة وتنورة كلوش، ياقة V وأكمام قصيرة جداً (كاب) مع حزام ربط بفيونكة على الخصر، الطول تقريباً للركبة أو تحتها بقليل.",
       "details": [
-        "ياقة V بلفّة",
-        "ربطة جانبية قابلة للتعديل",
-        "طول ميدي تحت الركبة"
+        "فستان كلاسيكي سادة بقصة سوينغ واسعة وتنورة كلوش، ياقة V وأكمام قصيرة جداً (كاب) مع حزام ربط بفيونكة على الخصر، الطول تقريباً للركبة أو تحتها بقليل"
       ],
-      "fabric": "شيفون مبطّن",
+      "fabric": "حسب وصف القطعة",
       "care": "غسيل يدوي بماء بارد، تجفيف بالظل",
-      "images": [],
-      "show": true
+      "images": [
+        "https://ae-pic-a1.aliexpress-media.com/kf/Hdedc53f6476849c6a74ff048b3256fb6X.jpg",
+        "https://ae-pic-a1.aliexpress-media.com/kf/Ha769627725f14480905ad2aea61a5dadd.jpg",
+        "https://ae-pic-a1.aliexpress-media.com/kf/HTB1tWZOdf1H3KVjSZFHq6zKppXaG.jpg",
+        "https://ae-pic-a1.aliexpress-media.com/kf/H00badfeb179e4e30bf267a216a5cccfbK.jpg",
+        "https://ae-pic-a1.aliexpress-media.com/kf/H6301db1ad2ec47bd98dd177819d26297X.jpg",
+        "https://ae-pic-a1.aliexpress-media.com/kf/HTB1ujoRdf5G3KVjSZPxq6zI3XXau.jpg"
+      ],
+      "show": true,
+      "colorImages": {
+        "عنابي": [
+          "https://ae-pic-a1.aliexpress-media.com/kf/HTB10ngZdbus3KVjSZKbq6xqkFXaY.jpg"
+        ],
+        "أسود": [
+          "https://ae-pic-a1.aliexpress-media.com/kf/HTB1tWZOdf1H3KVjSZFHq6zKppXaG.jpg"
+        ],
+        "بنفسجي": [
+          "https://ae-pic-a1.aliexpress-media.com/kf/HTB1yRAVdlCw3KVjSZFlq6AJkFXa0.jpg"
+        ],
+        "وردي": [
+          "https://ae-pic-a1.aliexpress-media.com/kf/HTB12VwQdlWD3KVjSZFsq6AqkpXaz.jpg"
+        ],
+        "أزرق سماوي": [
+          "https://ae-pic-a1.aliexpress-media.com/kf/HTB1fycRdouF3KVjSZK9q6zVtXXam.jpg"
+        ],
+        "أزرق ملكي": [
+          "https://ae-pic-a1.aliexpress-media.com/kf/HTB19eoOdf1H3KVjSZFBq6zSMXXa7.jpg"
+        ]
+      }
     },
     {
       "id": 3,
       "cat": "dresses",
       "type": "maxi",
-      "name": "فستان ماكسي كاجوال قطني",
-      "price": 119,
+      "name": "فستان قطن وكتان فضفاض بجيوب",
+      "price": 129,
       "old": 0,
       "badge": "",
       "sizeChart": "women",
@@ -214,75 +307,122 @@
       ],
       "colors": [
         {
-          "name": "بيج",
-          "hex": "#d8c3a5"
+          "name": "أبيض",
+          "hex": "#f2efe8"
         },
         {
-          "name": "أزرق سماوي",
-          "hex": "#9fc3dd"
+          "name": "وردي",
+          "hex": "#e3a6b4"
         },
         {
-          "name": "موكا",
-          "hex": "#8b6b57"
+          "name": "أسود",
+          "hex": "#1c1b1d"
+        },
+        {
+          "name": "أصفر",
+          "hex": "#e6c45a"
         }
       ],
-      "desc": "فستان يومي مريح من القطن الخفيف، مثالي للبيت والمشاوير وأجواء الصيف والشتاء الخفيف.",
+      "desc": "فستان طويل فضفاض من القطن والكتان بلون سادة. رقبة دائرية وجيبين جانبيين. خفيف ومريح للبيت والمشاوير.",
       "details": [
-        "قطن 100% يسمح بالتهوية",
-        "جيوب جانبية",
-        "مقاسات حتى 3XL"
+        "فستان طويل فضفاض من القطن والكتان بلون سادة",
+        "رقبة دائرية وجيبين جانبيين",
+        "خفيف ومريح للبيت والمشاوير"
       ],
-      "fabric": "قطن",
+      "fabric": "قطن والكتان بلون سادة",
       "care": "غسيل بالغسالة 30°",
-      "images": [],
-      "show": true
+      "images": [
+        "https://ae-pic-a1.aliexpress-media.com/kf/S9bfbc0c099c343f6bac4fceb121d779fy.jpg",
+        "https://ae-pic-a1.aliexpress-media.com/kf/Se6dde79a9fd64f7382b59d7a80f16d5bd.jpg",
+        "https://ae-pic-a1.aliexpress-media.com/kf/S040b68a6c1e1430bb5af8acedecf98a3k.jpg",
+        "https://ae-pic-a1.aliexpress-media.com/kf/S5a37d943ad0b422c8d16e180029550365.jpg",
+        "https://ae-pic-a1.aliexpress-media.com/kf/S65b68e27c5fc4ead93dc41377da6cc4c6.jpg",
+        "https://ae-pic-a1.aliexpress-media.com/kf/S231b152d76c24a67976329489420aed6o.jpg"
+      ],
+      "show": true,
+      "colorImages": {
+        "أبيض": [
+          "https://ae-pic-a1.aliexpress-media.com/kf/Se6dde79a9fd64f7382b59d7a80f16d5bd.jpg"
+        ],
+        "وردي": [
+          "https://ae-pic-a1.aliexpress-media.com/kf/S65b68e27c5fc4ead93dc41377da6cc4c6.jpg"
+        ],
+        "أسود": [
+          "https://ae-pic-a1.aliexpress-media.com/kf/S040b68a6c1e1430bb5af8acedecf98a3k.jpg"
+        ],
+        "أصفر": [
+          "https://ae-pic-a1.aliexpress-media.com/kf/S5a37d943ad0b422c8d16e180029550365.jpg"
+        ]
+      }
     },
     {
       "id": 4,
       "cat": "dresses",
       "type": "wrap",
-      "name": "فستان ساتان ميدي بربطة",
-      "price": 159,
+      "name": "فستان ساتان بأكمام دانتيل",
+      "price": 249,
       "old": 0,
       "badge": "",
       "sizeChart": "women",
       "sizes": [
         "S",
         "M",
-        "L",
-        "XL"
+        "L"
       ],
       "colors": [
         {
-          "name": "شامبين",
-          "hex": "#cdb389"
+          "name": "وردي",
+          "hex": "#e7b3bd"
         },
         {
-          "name": "لافندر",
-          "hex": "#b8a7cf"
+          "name": "أزرق سماوي",
+          "hex": "#9fbfdc"
         },
         {
-          "name": "كحلي",
-          "hex": "#1f2a44"
+          "name": "أوف وايت",
+          "hex": "#efe8dc"
+        },
+        {
+          "name": "أصفر زبدي",
+          "hex": "#ecd78f"
         }
       ],
-      "desc": "ساتان لامع بقصّة لف ناعمة — اختيار سهل للعزايم والطلعات المسائية.",
+      "desc": "فستان ساتان طويل بلون سادة، ياقة دائرية وأكمام طويلة بتفاصيل دانتيل وتطريز على الحواف، قصّة مستقيمة.",
       "details": [
-        "لمعة ساتان هادئة",
-        "ربطة على الخصر",
-        "مبطّن"
+        "فستان ساتان طويل بلون سادة، ياقة دائرية وأكمام طويلة بتفاصيل دانتيل وتطريز على الحواف، قصّة مستقيمة"
       ],
-      "fabric": "ساتان",
+      "fabric": "ساتان طويل بلون سادة",
       "care": "تنظيف جاف أو غسيل يدوي لطيف",
-      "images": [],
-      "show": true
+      "images": [
+        "https://ae-pic-a1.aliexpress-media.com/kf/See1964ed1b524ad5a1eb30432dd8c428P.jpg",
+        "https://ae-pic-a1.aliexpress-media.com/kf/S06fca2866d13419d8e9b1f31ae0a7f0cU.jpg",
+        "https://ae-pic-a1.aliexpress-media.com/kf/Sa61b7ae61626410793a488babac73d8cH.jpg",
+        "https://ae-pic-a1.aliexpress-media.com/kf/S2d713b265e334a6c80799b0ed2f8d489U.jpg",
+        "https://ae-pic-a1.aliexpress-media.com/kf/S7f73d7d23e484b29a53df1faca1a8475i.jpg",
+        "https://ae-pic-a1.aliexpress-media.com/kf/Scfc54b8b62bc4877bdb53f3832eb50c42.jpg"
+      ],
+      "show": false,
+      "colorImages": {
+        "وردي": [
+          "https://ae-pic-a1.aliexpress-media.com/kf/Sa61b7ae61626410793a488babac73d8cH.jpg"
+        ],
+        "أزرق سماوي": [
+          "https://ae-pic-a1.aliexpress-media.com/kf/Sb9b0061b9fd9404c8f74fa9b21a394e7x.jpg"
+        ],
+        "أوف وايت": [
+          "https://ae-pic-a1.aliexpress-media.com/kf/S2d713b265e334a6c80799b0ed2f8d489U.jpg"
+        ],
+        "أصفر زبدي": [
+          "https://ae-pic-a1.aliexpress-media.com/kf/See1964ed1b524ad5a1eb30432dd8c428P.jpg"
+        ]
+      }
     },
     {
       "id": 5,
       "cat": "evening",
       "type": "gown",
-      "name": "فستان سهرة ساتان بقصّة كاول",
-      "price": 259,
+      "name": "فستان سهرة ساتان مطبوع بأكمام طويلة",
+      "price": 289,
       "old": 329,
       "badge": "sale",
       "featured": true,
@@ -295,39 +435,43 @@
       ],
       "colors": [
         {
-          "name": "عنابي",
-          "hex": "#6d1f2f"
-        },
-        {
-          "name": "زمردي",
-          "hex": "#1f6b57"
-        },
-        {
-          "name": "أسود",
+          "name": "أسود مطبوع",
           "hex": "#1c1b1d"
         },
         {
-          "name": "شامبين",
-          "hex": "#cdb389"
+          "name": "وردي مطبوع",
+          "hex": "#d9a3aa"
         }
       ],
-      "desc": "فستان سهرة طويل من الساتان الثقيل بياقة كاول منسدلة وفتحة جانبية — للأعراس والمناسبات.",
+      "desc": "فستان سهرة طويل من الساتان المطبوع بياقة V وأكمام كاملة وتفاصيل دانتيل وطيّات، قصّة ناعمة على الجسم.",
       "details": [
-        "طول للأرض",
-        "حمالات رفيعة قابلة للتعديل",
-        "فتحة جانبية أنيقة",
-        "مبطّن بالكامل"
+        "فستان سهرة طويل من الساتان المطبوع بياقة V وأكمام كاملة وتفاصيل دانتيل وطيّات، قصّة ناعمة على الجسم"
       ],
-      "fabric": "ساتان ثقيل",
+      "fabric": "ساتان المطبوع بياقة V وأكمام كاملة وتفاصيل دانتيل وطيّات",
       "care": "تنظيف جاف فقط",
-      "images": [],
-      "show": true
+      "images": [
+        "https://ae-pic-a1.aliexpress-media.com/kf/S5bacbc1e5f71493da8ce5f4c5033f337Z.jpg",
+        "https://ae-pic-a1.aliexpress-media.com/kf/Sec66c9d618544c4fb31c18082c8f8b21C.jpg",
+        "https://ae-pic-a1.aliexpress-media.com/kf/S66e7204d6b6f4f9db1485221973185e6X.jpg",
+        "https://ae-pic-a1.aliexpress-media.com/kf/S0a381330ff5047a0b5e7848b30cd91e5s.jpg",
+        "https://ae-pic-a1.aliexpress-media.com/kf/S89bf79423b2f4b2ca88057ea132cbac23.jpg",
+        "https://ae-pic-a1.aliexpress-media.com/kf/S0414c25a79144611b5e5bc1223bf1543Z.jpg"
+      ],
+      "show": true,
+      "colorImages": {
+        "أسود مطبوع": [
+          "https://ae-pic-a1.aliexpress-media.com/kf/S0a381330ff5047a0b5e7848b30cd91e5s.jpg"
+        ],
+        "وردي مطبوع": [
+          "https://ae-pic-a1.aliexpress-media.com/kf/S5bacbc1e5f71493da8ce5f4c5033f337Z.jpg"
+        ]
+      }
     },
     {
       "id": 6,
       "cat": "evening",
       "type": "maxi",
-      "name": "فستان سهرة شيفون بأكمام طويلة",
+      "name": "فستان شيفون مطبوع برقبة عالية",
       "price": 249,
       "old": 0,
       "badge": "new",
@@ -335,34 +479,41 @@
       "sizes": [
         "S",
         "M",
-        "L",
-        "XL",
-        "2XL"
+        "L"
       ],
       "colors": [
         {
-          "name": "كحلي",
-          "hex": "#1f2a44"
+          "name": "عنابي مطبوع",
+          "hex": "#6d1f2f"
         },
         {
-          "name": "وردي باودر",
-          "hex": "#c99a94"
-        },
-        {
-          "name": "زيتي",
-          "hex": "#6e7a55"
+          "name": "مشمشي مطبوع",
+          "hex": "#e8c4a0"
         }
       ],
-      "desc": "محتشم وفخم: شيفون منسدل بطبقات مع أكمام طويلة وحزام لامع — للمناسبات العائلية.",
+      "desc": "فستان شيفون طويل مطبوع بخصر عالي ورقبة عالية وأكمام طويلة منفوخة، قصّة كلاسيكية محتشمة.",
       "details": [
-        "طبقات شيفون مبطّنة",
-        "أكمام طويلة شفافة بأساور",
-        "حزام بتفاصيل لامعة"
+        "فستان شيفون طويل مطبوع بخصر عالي ورقبة عالية وأكمام طويلة منفوخة، قصّة كلاسيكية محتشمة"
       ],
-      "fabric": "شيفون مع بطانة ساتان",
+      "fabric": "شيفون طويل مطبوع بخصر عالي ورقبة عالية وأكمام طويلة منفوخة",
       "care": "غسيل يدوي لطيف أو تنظيف جاف",
-      "images": [],
-      "show": true
+      "images": [
+        "https://ae-pic-a1.aliexpress-media.com/kf/S86eed8083c0e4bd2a21723e4925a8e08p.jpg",
+        "https://ae-pic-a1.aliexpress-media.com/kf/S17d96e3cf3904bc3b26c1ccf56a730e8G.jpg",
+        "https://ae-pic-a1.aliexpress-media.com/kf/S2355c6669ad843478a6eab1a1fe5c20aI.jpg",
+        "https://ae-pic-a1.aliexpress-media.com/kf/Sc6b800e6dfb44b0f991671294f6fae73X.jpg",
+        "https://ae-pic-a1.aliexpress-media.com/kf/S51b6a673f9294a85aab08a711f29b92an.jpg",
+        "https://ae-pic-a1.aliexpress-media.com/kf/S529ff4782f7048659b08d52c26da825cl.jpg"
+      ],
+      "show": true,
+      "colorImages": {
+        "عنابي مطبوع": [
+          "https://ae-pic-a1.aliexpress-media.com/kf/S2355c6669ad843478a6eab1a1fe5c20aI.jpg"
+        ],
+        "مشمشي مطبوع": [
+          "https://ae-pic-a1.aliexpress-media.com/kf/S86eed8083c0e4bd2a21723e4925a8e08p.jpg"
+        ]
+      }
     },
     {
       "id": 7,
@@ -376,51 +527,172 @@
       "sizes": [
         "S",
         "M",
-        "L",
-        "XL"
+        "L"
       ],
       "colors": [
         {
-          "name": "أخضر ملكي",
-          "hex": "#174a3e"
-        },
-        {
-          "name": "عنابي",
-          "hex": "#5a1626"
-        },
-        {
           "name": "أسود",
           "hex": "#1c1b1d"
+        },
+        {
+          "name": "أزرق ملكي",
+          "hex": "#24418c"
+        },
+        {
+          "name": "أخضر ملكي",
+          "hex": "#174a3e"
         }
       ],
-      "desc": "مخمل ناعم بلمعة غنية — قطعة الموسم لمناسبات الشتاء.",
+      "desc": "فستان مخمل ناعم بطول طويل وأكمام طويلة مع كشكشة على الجسم، لمناسبات الشتاء.",
       "details": [
-        "مخمل مطاطي مريح",
-        "طول كامل",
-        "قصّة ضيقة من فوق ومنسدلة"
+        "فستان مخمل ناعم بطول طويل وأكمام طويلة مع كشكشة على الجسم، لمناسبات الشتاء"
       ],
-      "fabric": "مخمل",
+      "fabric": "مخمل ناعم بطول طويل وأكمام طويلة مع كشكشة على الجسم",
       "care": "تنظيف جاف",
-      "images": [],
-      "show": true
+      "images": [
+        "https://ae-pic-a1.aliexpress-media.com/kf/Sfb04cf84682f4861a42a382e665a7c9eN.jpg",
+        "https://ae-pic-a1.aliexpress-media.com/kf/S023bc0e263c94918890bba01c51d32a5w.jpg",
+        "https://ae-pic-a1.aliexpress-media.com/kf/S729544be01e44c4684a0fc67da133824S.jpg",
+        "https://ae-pic-a1.aliexpress-media.com/kf/S59e44be158f1412a885f00f76c374003H.jpg",
+        "https://ae-pic-a1.aliexpress-media.com/kf/S254e6d900f62441289dda0681d175e768.jpg",
+        "https://ae-pic-a1.aliexpress-media.com/kf/Sbbb41adb7fe748109577ed2187b4f336w.jpg"
+      ],
+      "show": true,
+      "colorImages": {
+        "أسود": [
+          "https://ae-pic-a1.aliexpress-media.com/kf/Se287e0e3acc743a4a74a1a3b7e25027cZ.jpg"
+        ],
+        "أزرق ملكي": [
+          "https://ae-pic-a1.aliexpress-media.com/kf/Scf2ae31349584764b0870930e1bb9599x.jpg"
+        ],
+        "أخضر ملكي": [
+          "https://ae-pic-a1.aliexpress-media.com/kf/S91637e33bf3547cc8046af9b87e4cc45Y.jpg"
+        ]
+      }
     },
     {
       "id": 8,
       "cat": "abayas",
       "type": "abaya",
-      "name": "عباية كريب يومية بتطريز ذهبي",
+      "name": "عباية مفتوحة مع طرحة",
       "price": 199,
       "old": 249,
       "badge": "pick",
       "featured": true,
-      "sizeChart": "abaya",
+      "sizeChart": "onesize",
       "accent": "#cdb389",
       "sizes": [
-        "52",
-        "54",
-        "56",
-        "58",
-        "60"
+        "مقاس حر"
+      ],
+      "colors": [
+        {
+          "name": "كحلي",
+          "hex": "#1f2a44"
+        }
+      ],
+      "desc": "عباية طويلة مفتوحة من الأمام بأكمام كاملة، تجي مع حجاب بنفس اللون (قطعتين)، قصّة واسعة مريحة.",
+      "details": [
+        "عباية طويلة مفتوحة من الأمام بأكمام كاملة، تجي مع حجاب بنفس اللون (قطعتين)، قصّة واسعة مريحة"
+      ],
+      "fabric": "حسب وصف القطعة",
+      "care": "غسيل يدوي بماء بارد، كي على حرارة منخفضة",
+      "images": [
+        "https://ae-pic-a1.aliexpress-media.com/kf/S023de09eeb2843248a251aea2e08a12aO.jpg",
+        "https://ae-pic-a1.aliexpress-media.com/kf/S240eb4cddb9b490cac4be6de3c0a3decw.jpg",
+        "https://ae-pic-a1.aliexpress-media.com/kf/Sc9e02ceb0124409bac61224e8bdadc3fb.jpg",
+        "https://ae-pic-a1.aliexpress-media.com/kf/S28fc525c7fc2437ebb477f5521680363g.jpg",
+        "https://ae-pic-a1.aliexpress-media.com/kf/S2b1d99563d4545bcbd1be66c49158491Q.jpg",
+        "https://ae-pic-a1.aliexpress-media.com/kf/Sa88c088dbfc941e3947675cecc78e4fad.jpg"
+      ],
+      "show": true,
+      "colorImages": {
+        "كحلي": [
+          "https://ae-pic-a1.aliexpress-media.com/kf/S14a2a912fa29426cba50f49308403efbb.jpg"
+        ]
+      }
+    },
+    {
+      "id": 9,
+      "cat": "abayas",
+      "type": "abaya",
+      "name": "عباية كيمونو مفتوحة بألوان ترابية",
+      "price": 219,
+      "old": 0,
+      "badge": "new",
+      "sizeChart": "onesize",
+      "accent": "#efe6d6",
+      "sizes": [
+        "مقاس حر"
+      ],
+      "colors": [
+        {
+          "name": "بيج",
+          "hex": "#d6c2a4"
+        },
+        {
+          "name": "أسود",
+          "hex": "#1c1b1d"
+        },
+        {
+          "name": "أخضر غامق",
+          "hex": "#2f4a3a"
+        },
+        {
+          "name": "كحلي",
+          "hex": "#1f2a44"
+        },
+        {
+          "name": "بني قهوة",
+          "hex": "#6b4a36"
+        }
+      ],
+      "desc": "عباية كيمونو مفتوحة بأكمام طويلة واسعة بلون سادة، قصّة بشت فضفاضة تلبس فوق الفستان أو البنطلون.",
+      "details": [
+        "عباية كيمونو مفتوحة بأكمام طويلة واسعة بلون سادة، قصّة بشت فضفاضة تلبس فوق الفستان أو البنطلون"
+      ],
+      "fabric": "حسب وصف القطعة",
+      "care": "غسيل لطيف بالغسالة 30°",
+      "images": [
+        "https://ae-pic-a1.aliexpress-media.com/kf/Sb75e2900db5843b4bb1e6cb43d458a92H.jpg",
+        "https://ae-pic-a1.aliexpress-media.com/kf/S9251b37b28814ce390eeb18b55b134775.jpg",
+        "https://ae-pic-a1.aliexpress-media.com/kf/Sd854a84a6df4471ab50e58bcf2bf7622f.jpg",
+        "https://ae-pic-a1.aliexpress-media.com/kf/S0cd5120a8ce7450ea83aa2b248b09c94D.jpg"
+      ],
+      "show": true,
+      "colorImages": {
+        "بيج": [
+          "https://ae-pic-a1.aliexpress-media.com/kf/S0cd5120a8ce7450ea83aa2b248b09c94D.jpg"
+        ],
+        "أسود": [
+          "https://ae-pic-a1.aliexpress-media.com/kf/Sd854a84a6df4471ab50e58bcf2bf7622f.jpg"
+        ],
+        "أخضر غامق": [
+          "https://ae-pic-a1.aliexpress-media.com/kf/Sb75e2900db5843b4bb1e6cb43d458a92H.jpg"
+        ],
+        "كحلي": [
+          "https://ae-pic-a1.aliexpress-media.com/kf/S2b0d000b5cb74183a58114fa9dd5555cI.png"
+        ],
+        "بني قهوة": [
+          "https://ae-pic-a1.aliexpress-media.com/kf/S9251b37b28814ce390eeb18b55b134775.jpg"
+        ]
+      }
+    },
+    {
+      "id": 10,
+      "cat": "abayas",
+      "type": "abaya",
+      "name": "عباية بأساور دانتيل للمناسبات",
+      "price": 249,
+      "old": 299,
+      "badge": "sale",
+      "sizeChart": "women",
+      "accent": "#cdb389",
+      "sizes": [
+        "S",
+        "M",
+        "L",
+        "XL",
+        "2XL"
       ],
       "colors": [
         {
@@ -429,116 +701,78 @@
         },
         {
           "name": "موكا",
-          "hex": "#6b5243"
-        }
-      ],
-      "desc": "عباية مفتوحة من الكريب الفاخر مع خط تطريز ذهبي ناعم على الأطراف والأكمام — أنيقة للدوام والمشاوير.",
-      "details": [
-        "قصّة مفتوحة مع أزرار مخفية",
-        "أكمام واسعة",
-        "تجي معها طرحة بنفس اللون"
-      ],
-      "fabric": "كريب ناعم",
-      "care": "غسيل يدوي بماء بارد، كي على حرارة منخفضة",
-      "images": [],
-      "show": true
-    },
-    {
-      "id": 9,
-      "cat": "abayas",
-      "type": "abaya",
-      "name": "عباية بشت كتان ملونة",
-      "price": 219,
-      "old": 0,
-      "badge": "new",
-      "sizeChart": "abaya",
-      "accent": "#efe6d6",
-      "sizes": [
-        "52",
-        "54",
-        "56",
-        "58",
-        "60"
-      ],
-      "colors": [
+          "hex": "#8b6b57"
+        },
         {
-          "name": "بيج",
-          "hex": "#c8b49a"
+          "name": "بني غامق",
+          "hex": "#4a3326"
+        },
+        {
+          "name": "بيج مشمشي",
+          "hex": "#e3c9a8"
         },
         {
           "name": "زيتي",
           "hex": "#5f6b48"
         },
         {
-          "name": "كحلي",
-          "hex": "#1f2a44"
-        },
-        {
           "name": "رمادي",
-          "hex": "#7d7f86"
+          "hex": "#8e9096"
         }
       ],
-      "desc": "عباية بقصّة بشت واسعة من الكتان الخفيف بألوان ترابية هادئة — ستايل عصري ومريح.",
+      "desc": "عباية طويلة سادة بقصّة أنيقة وأساور دانتيل على الأكمام، تناسب العيد والزيارات.",
       "details": [
-        "قصّة بشت واسعة",
-        "خامة كتان تسمح بالتهوية",
-        "تجي معها طرحة"
+        "عباية طويلة سادة بقصّة أنيقة وأساور دانتيل على الأكمام، تناسب العيد والزيارات"
       ],
-      "fabric": "كتان مخلوط",
-      "care": "غسيل لطيف بالغسالة 30°",
-      "images": [],
-      "show": true
-    },
-    {
-      "id": 10,
-      "cat": "abayas",
-      "type": "abaya",
-      "name": "عباية رسمية بأكمام مطرزة",
-      "price": 249,
-      "old": 299,
-      "badge": "sale",
-      "sizeChart": "abaya",
-      "accent": "#cdb389",
-      "sizes": [
-        "52",
-        "54",
-        "56",
-        "58",
-        "60"
-      ],
-      "colors": [
-        {
-          "name": "أسود",
-          "hex": "#1c1b1d"
-        }
-      ],
-      "desc": "عباية سوداء رسمية بتطريز على الأكمام والأطراف — للمناسبات والزيارات.",
-      "details": [
-        "تطريز على الأكمام",
-        "خامة ثقيلة ما تشف",
-        "تجي معها طرحة شيفون"
-      ],
-      "fabric": "نداء",
+      "fabric": "دانتيل على الأكمام",
       "care": "تنظيف جاف أو غسيل يدوي",
-      "images": [],
-      "show": true
+      "images": [
+        "https://ae-pic-a1.aliexpress-media.com/kf/S528b3a8364054066b0b08d7981f792a9r.jpg",
+        "https://ae-pic-a1.aliexpress-media.com/kf/Sa91e75037e9b42d783c9f5e1c2d518cfo.jpg",
+        "https://ae-pic-a1.aliexpress-media.com/kf/S223245d5ce31442dbec32cbeec89e9355.jpg",
+        "https://ae-pic-a1.aliexpress-media.com/kf/S61bbef53c12e47909092fad9b98bc514w.jpg",
+        "https://ae-pic-a1.aliexpress-media.com/kf/Se111eb9ad06449a7850f307566bcedfde.jpg",
+        "https://ae-pic-a1.aliexpress-media.com/kf/S6a9a063229b645c09db223d9bc0a75d19.jpg"
+      ],
+      "show": true,
+      "colorImages": {
+        "أسود": [
+          "https://ae-pic-a1.aliexpress-media.com/kf/S1f150b14ac8a422c9e8ddaf626f5771eD.jpg"
+        ],
+        "موكا": [
+          "https://ae-pic-a1.aliexpress-media.com/kf/Sc28c4c5f15ff4b45b39ba3e8c50ee288U.jpg"
+        ],
+        "بني غامق": [
+          "https://ae-pic-a1.aliexpress-media.com/kf/S8eb409561ff44cc4900df00188501fbdz.jpg"
+        ],
+        "بيج مشمشي": [
+          "https://ae-pic-a1.aliexpress-media.com/kf/S314dd52afacd4359b7f3a021d58c4ba6B.jpg"
+        ],
+        "زيتي": [
+          "https://ae-pic-a1.aliexpress-media.com/kf/Sa1e9e80ebebc4d10894ad48559c4cd69E.jpg"
+        ],
+        "رمادي": [
+          "https://ae-pic-a1.aliexpress-media.com/kf/Se778e2462fa542878b829e2ce75598921.jpg"
+        ]
+      }
     },
     {
       "id": 11,
       "cat": "abayas",
       "type": "abaya",
       "name": "عباية سادة عملية للدوام",
-      "price": 169,
+      "price": 239,
       "old": 0,
       "badge": "",
-      "sizeChart": "abaya",
+      "sizeChart": "women",
       "accent": "#3a3a3e",
       "sizes": [
-        "52",
-        "54",
-        "56",
-        "58",
-        "60"
+        "S",
+        "M",
+        "L",
+        "XL",
+        "2XL",
+        "3XL"
       ],
       "colors": [
         {
@@ -546,20 +780,54 @@
           "hex": "#1c1b1d"
         },
         {
-          "name": "كحلي",
-          "hex": "#1f2a44"
+          "name": "أوف وايت",
+          "hex": "#efe8dc"
+        },
+        {
+          "name": "أزرق",
+          "hex": "#3c5a8a"
+        },
+        {
+          "name": "بني قهوة",
+          "hex": "#6b4a36"
+        },
+        {
+          "name": "زيتي",
+          "hex": "#5f6b48"
         }
       ],
-      "desc": "عباية سادة بخامة ما تتكرمش — مثالية للدوام اليومي والسفر.",
+      "desc": "عباية/قفطان طويل بأكمام طويلة بلون سادة وقصّة واسعة مريحة للدوام والمشاوير.",
       "details": [
-        "خامة مقاومة للتكرمش",
-        "جيوب جانبية",
-        "أكمام بأساور مطاط"
+        "عباية/قفطان طويل بأكمام طويلة بلون سادة وقصّة واسعة مريحة للدوام والمشاوير"
       ],
-      "fabric": "كريب",
+      "fabric": "حسب وصف القطعة",
       "care": "غسيل بالغسالة دورة لطيفة",
-      "images": [],
-      "show": true
+      "images": [
+        "https://ae-pic-a1.aliexpress-media.com/kf/S1c9b84e703554a26acfaa6c7c08af39bY.jpg",
+        "https://ae-pic-a1.aliexpress-media.com/kf/Sb4bed13aec90476d820102d21d9c1365J.jpg",
+        "https://ae-pic-a1.aliexpress-media.com/kf/S2ed219eb0f654c6a96911680a5dc9f4av.jpg",
+        "https://ae-pic-a1.aliexpress-media.com/kf/Sb40a1c76070447ed9e9f2e82d84b6255P.jpg",
+        "https://ae-pic-a1.aliexpress-media.com/kf/Scc31d59098164352bcfdc8eec37ca7ddL.jpg",
+        "https://ae-pic-a1.aliexpress-media.com/kf/S15e6c5dd2a08423fa9990217c72bc4a7X.jpg"
+      ],
+      "show": true,
+      "colorImages": {
+        "أسود": [
+          "https://ae-pic-a1.aliexpress-media.com/kf/S99e31d0b258747f897aa3a33ac0ba366p.jpg"
+        ],
+        "أوف وايت": [
+          "https://ae-pic-a1.aliexpress-media.com/kf/S313f841e2005431583539dbd75ab5e23E.jpg"
+        ],
+        "أزرق": [
+          "https://ae-pic-a1.aliexpress-media.com/kf/Sf5d7066ae28d47e996b91aebb5be9302d.jpg"
+        ],
+        "بني قهوة": [
+          "https://ae-pic-a1.aliexpress-media.com/kf/S83308735e17d4f979c0a949083bb23c1u.jpg"
+        ],
+        "زيتي": [
+          "https://ae-pic-a1.aliexpress-media.com/kf/S0324ed68b6424873a4297fab03aa99513.jpg"
+        ]
+      }
     },
     {
       "id": 12,
@@ -570,81 +838,154 @@
       "old": 229,
       "badge": "pick",
       "featured": true,
-      "sizeChart": "onesize",
+      "sizeChart": "women",
       "accent": "#a9874f",
       "sizes": [
-        "مقاس حر"
+        "S",
+        "M",
+        "L",
+        "XL",
+        "2XL"
       ],
       "colors": [
         {
-          "name": "أوف وايت",
-          "hex": "#efe8dc"
+          "name": "خاكي",
+          "hex": "#b8a07a"
         },
         {
-          "name": "زمردي",
-          "hex": "#1f6b57"
+          "name": "أسود",
+          "hex": "#1c1b1d"
         },
         {
-          "name": "عنابي",
-          "hex": "#6d1f2f"
+          "name": "وردي",
+          "hex": "#e3b7b3"
         }
       ],
-      "desc": "جلابية واسعة بتطريز ذهبي على الصدر والأكمام والذيل — جمعات العيد ورمضان.",
+      "desc": "جلابية طويلة مفتوحة بقصّة كارديجان وتطريز على الأطراف والأكمام، تلبس للعيد والجمعات.",
       "details": [
-        "قصّة فراشة واسعة",
-        "تطريز",
-        "مقاس حر يناسب من S إلى 2XL"
+        "جلابية طويلة مفتوحة بقصّة كارديجان وتطريز على الأطراف والأكمام، تلبس للعيد والجمعات"
       ],
-      "fabric": "شيفون مبطّن",
+      "fabric": "حسب وصف القطعة",
       "care": "غسيل يدوي بماء بارد",
-      "images": [],
-      "show": true
+      "images": [
+        "https://ae-pic-a1.aliexpress-media.com/kf/Sc7ce113afc2a439b935159e3033b8104o.jpg",
+        "https://ae-pic-a1.aliexpress-media.com/kf/Sf6adb5f008ef47c5ae9c63fc476170889.jpg",
+        "https://ae-pic-a1.aliexpress-media.com/kf/S1af158ba4458468897eb624fbe4038beN.jpg",
+        "https://ae-pic-a1.aliexpress-media.com/kf/S78a955a413454f0d8b462bd887bfbbfec.jpg",
+        "https://ae-pic-a1.aliexpress-media.com/kf/Sa945f896f24f4b7f98ca625512822b5bF.jpg",
+        "https://ae-pic-a1.aliexpress-media.com/kf/Sa9724ac82dbc4db39de16ab4e7d4a03dJ.jpg"
+      ],
+      "show": true,
+      "colorImages": {
+        "خاكي": [
+          "https://ae-pic-a1.aliexpress-media.com/kf/Sa9724ac82dbc4db39de16ab4e7d4a03dJ.jpg"
+        ],
+        "أسود": [
+          "https://ae-pic-a1.aliexpress-media.com/kf/Sb67b6d4247bc4d599f9a2835e3b3beac4.jpg"
+        ],
+        "وردي": [
+          "https://ae-pic-a1.aliexpress-media.com/kf/S52fc158b5f6846c082958cb628d1aeddn.jpg"
+        ]
+      }
     },
     {
       "id": 13,
       "cat": "kaftan",
       "type": "kaftan",
       "name": "قفطان ساتان بأكمام فراشة",
-      "price": 169,
+      "price": 219,
       "old": 0,
       "badge": "",
-      "sizeChart": "onesize",
+      "sizeChart": "women",
       "accent": "#cdb389",
       "sizes": [
-        "مقاس حر"
+        "S",
+        "M"
       ],
       "colors": [
         {
           "name": "لافندر",
-          "hex": "#b8a7cf"
-        },
-        {
-          "name": "شامبين",
-          "hex": "#cdb389"
+          "hex": "#b7a9e0"
         },
         {
           "name": "كحلي",
-          "hex": "#1f2a44"
+          "hex": "#2b3f6e"
+        },
+        {
+          "name": "خاكي شامبين",
+          "hex": "#b09a6e"
+        },
+        {
+          "name": "أخضر نعناعي",
+          "hex": "#8fb3ae"
+        },
+        {
+          "name": "أسود",
+          "hex": "#1a1a1e"
+        },
+        {
+          "name": "موف ترابي",
+          "hex": "#8c766c"
+        },
+        {
+          "name": "زيتي",
+          "hex": "#5e6145"
+        },
+        {
+          "name": "عنابي",
+          "hex": "#8e2a48"
         }
       ],
-      "desc": "قفطان ساتان ناعم بأكمام فراشة وحزام اختياري — فخامة بدون تكلّف.",
+      "desc": "قفطان/عباية ساتان لامع بأكمام فراشة واسعة (باتوينغ) وطول كامل للأرض وياقة دائرية، قصة فضفاضة. القطعة وحدها بدون حزام ولا طرحة، والقماش بوليستر ساتان.",
       "details": [
-        "ساتان بلمعة هادئة",
-        "حزام قابل للفك",
-        "مقاس حر"
+        "قفطان/عباية ساتان لامع بأكمام فراشة واسعة (باتوينغ) وطول كامل للأرض وياقة دائرية، قصة فضفاضة",
+        "القطعة وحدها بدون حزام ولا طرحة، والقماش بوليستر ساتان"
       ],
-      "fabric": "ساتان",
+      "fabric": "ساتان لامع بأكمام فراشة واسعة (باتوينغ) وطول كامل للأرض وياق",
       "care": "غسيل يدوي لطيف",
-      "images": [],
-      "show": true
+      "images": [
+        "https://ae-pic-a1.aliexpress-media.com/kf/Sd50bdd8840ef48b3b169634b20613f63M.jpg",
+        "https://ae-pic-a1.aliexpress-media.com/kf/Sdf72681093ce4dcd93649ec73d8b07f1r.jpg",
+        "https://ae-pic-a1.aliexpress-media.com/kf/S12d7ca26bffb457fac04d9c9691ad3b6C.jpg",
+        "https://ae-pic-a1.aliexpress-media.com/kf/Sd03ff935fb584c2aaa0d948b2861896cA.jpg",
+        "https://ae-pic-a1.aliexpress-media.com/kf/S6103b1b2b4ba4595bb67f53320c73af7b.jpg",
+        "https://ae-pic-a1.aliexpress-media.com/kf/S530eb9aca30e4a48824dc9fa14bd158aW.jpg"
+      ],
+      "show": true,
+      "colorImages": {
+        "لافندر": [
+          "https://ae-pic-a1.aliexpress-media.com/kf/S995dd31878ca425bb8b8f6eaaa612517y.jpg"
+        ],
+        "كحلي": [
+          "https://ae-pic-a1.aliexpress-media.com/kf/S48441d120951437aa3d8c371e1970ea8g.jpg"
+        ],
+        "خاكي شامبين": [
+          "https://ae-pic-a1.aliexpress-media.com/kf/S4e6be7bf0aaa4f8696c37f980b62086ab.jpg"
+        ],
+        "أخضر نعناعي": [
+          "https://ae-pic-a1.aliexpress-media.com/kf/Se4955a1a4e334fd0b4fe34a877ed4284v.jpg"
+        ],
+        "أسود": [
+          "https://ae-pic-a1.aliexpress-media.com/kf/S3bfd9f6c1056456f87fb7666c4737af1Q.jpg"
+        ],
+        "موف ترابي": [
+          "https://ae-pic-a1.aliexpress-media.com/kf/S110bdf842f1b4641af82a8bcb3f583e83.jpg"
+        ],
+        "زيتي": [
+          "https://ae-pic-a1.aliexpress-media.com/kf/S44479a2d8901485dabe59eadda379b23y.jpg"
+        ],
+        "عنابي": [
+          "https://ae-pic-a1.aliexpress-media.com/kf/S8a183256a44242d1abe2fcf022c54e3bT.jpg"
+        ]
+      }
     },
     {
       "id": 14,
       "cat": "kaftan",
       "type": "kaftan",
-      "name": "جلابية قطنية للبيت",
-      "price": 99,
-      "old": 129,
+      "name": "جلابية بيت شتوية دافية بجيوب",
+      "price": 169,
+      "old": 219,
       "badge": "sale",
       "sizeChart": "onesize",
       "accent": "#8b6b57",
@@ -653,8 +994,16 @@
       ],
       "colors": [
         {
-          "name": "سكري",
-          "hex": "#f4ebdd"
+          "name": "رمادي غامق",
+          "hex": "#4a4c52"
+        },
+        {
+          "name": "بيج",
+          "hex": "#d8c3a5"
+        },
+        {
+          "name": "بني قهوة",
+          "hex": "#6b4a36"
         },
         {
           "name": "وردي",
@@ -662,19 +1011,48 @@
         },
         {
           "name": "أزرق سماوي",
-          "hex": "#9fc3dd"
+          "hex": "#9fbfdc"
+        },
+        {
+          "name": "لافندر",
+          "hex": "#b8a7cf"
         }
       ],
-      "desc": "جلابية قطنية خفيفة بتطريز بسيط على الياقة — راحة البيت طول اليوم.",
+      "desc": "جلابية بيت طويلة من الفانيلا الدافية بأكمام طويلة وجيبين، قصّة واسعة مريحة لليالي الشتاء.",
       "details": [
-        "قطن خفيف",
-        "تطريز على الياقة",
-        "جيوب جانبية"
+        "جلابية بيت طويلة من الفانيلا الدافية بأكمام طويلة وجيبين، قصّة واسعة مريحة لليالي الشتاء"
       ],
-      "fabric": "قطن",
+      "fabric": "حسب وصف القطعة",
       "care": "غسيل بالغسالة 30°",
-      "images": [],
-      "show": true
+      "images": [
+        "https://ae-pic-a1.aliexpress-media.com/kf/S614da80766984271a11accf93bae59f1q.jpg",
+        "https://ae-pic-a1.aliexpress-media.com/kf/Scba11d72a53c4ecf953f0b929fef84573.jpg",
+        "https://ae-pic-a1.aliexpress-media.com/kf/S81caf2dcc2d2461e89c8d0714af1f2f82.jpg",
+        "https://ae-pic-a1.aliexpress-media.com/kf/S49d2256c3f194b0ea9d8e81303864ac40.jpg",
+        "https://ae-pic-a1.aliexpress-media.com/kf/Sba1ca0ac91bc4e0ebc837fd02b3d584b7.jpg",
+        "https://ae-pic-a1.aliexpress-media.com/kf/S2374b654fded4253a1d10f8789a1fad2b.jpg"
+      ],
+      "show": true,
+      "colorImages": {
+        "رمادي غامق": [
+          "https://ae-pic-a1.aliexpress-media.com/kf/S2b1592ffb55a437393908b559f5f8130x.jpg"
+        ],
+        "بيج": [
+          "https://ae-pic-a1.aliexpress-media.com/kf/S6f6b9321abad475ab539eb91bc246c75F.jpg"
+        ],
+        "بني قهوة": [
+          "https://ae-pic-a1.aliexpress-media.com/kf/S06e8f73e5059474c93cb588a484ab306I.jpg"
+        ],
+        "وردي": [
+          "https://ae-pic-a1.aliexpress-media.com/kf/S614da80766984271a11accf93bae59f1q.jpg"
+        ],
+        "أزرق سماوي": [
+          "https://ae-pic-a1.aliexpress-media.com/kf/S6adc827d399a4dc880a9a825b93d929aC.jpg"
+        ],
+        "لافندر": [
+          "https://ae-pic-a1.aliexpress-media.com/kf/Sed98bbdf54f14f8ead15d662921c86c7h.jpg"
+        ]
+      }
     },
     {
       "id": 15,
@@ -684,14 +1062,11 @@
       "price": 99,
       "old": 129,
       "badge": "trend",
-      "featured": true,
       "sizeChart": "sport",
       "sizes": [
-        "XS",
         "S",
         "M",
-        "L",
-        "XL"
+        "L"
       ],
       "colors": [
         {
@@ -699,116 +1074,200 @@
           "hex": "#1c1b1d"
         },
         {
-          "name": "زيتي",
-          "hex": "#6e7a55"
+          "name": "أخضر غامق",
+          "hex": "#2f4a3a"
         },
         {
-          "name": "موكا",
-          "hex": "#8b6b57"
+          "name": "بني قهوة",
+          "hex": "#6b4a36"
         },
         {
-          "name": "كحلي",
-          "hex": "#1f2a44"
+          "name": "رمادي",
+          "hex": "#7d7f86"
+        },
+        {
+          "name": "عنابي",
+          "hex": "#6d1f2f"
+        },
+        {
+          "name": "أخضر ماتشا",
+          "hex": "#8a9a6a"
+        },
+        {
+          "name": "بيج",
+          "hex": "#d8c3a5"
         }
       ],
-      "desc": "ليقنز سيملس بخصر عالي يشد البطن، قماش ما يشف حتى مع السكوات — للنادي والمشي واليوغا.",
+      "desc": "ليقنز سيملس بخصر عالي ومرونة عالية، قماش سريع الجفاف للنادي واليوغا والمشي.",
       "details": [
-        "خصر عالي ضاغط",
-        "بدون خياطات جانبية",
-        "قماش سميك غير شفاف",
-        "يجف بسرعة"
+        "ليقنز سيملس بخصر عالي ومرونة عالية، قماش سريع الجفاف للنادي واليوغا والمشي"
       ],
-      "fabric": "نايلون 75% · سباندكس 25%",
+      "fabric": "حسب وصف القطعة",
       "care": "غسيل بارد، بدون مجفف",
-      "images": [],
-      "show": true
+      "images": [
+        "https://ae-pic-a1.aliexpress-media.com/kf/S0950ddd171d749c1b23ab83a1f7a7c46i.jpg",
+        "https://ae-pic-a1.aliexpress-media.com/kf/Scd74be04386645ecaa2f8ab291b21f553.jpg",
+        "https://ae-pic-a1.aliexpress-media.com/kf/S6e83a8f31c2d48da92be789e29956adcA.jpg",
+        "https://ae-pic-a1.aliexpress-media.com/kf/S95f3396d8d704e4783285762e7059775p.jpg",
+        "https://ae-pic-a1.aliexpress-media.com/kf/Sfa4ca4b2ebc0453191fe95d0e63983c5E.jpg",
+        "https://ae-pic-a1.aliexpress-media.com/kf/Sf6a1561679bc4573ba97cb7e333aaae05.jpg"
+      ],
+      "show": true,
+      "colorImages": {
+        "أسود": [
+          "https://ae-pic-a1.aliexpress-media.com/kf/S5790e6d363724e33bacc86a6867485a6c.jpg"
+        ],
+        "أخضر غامق": [
+          "https://ae-pic-a1.aliexpress-media.com/kf/Scedcee37c1a64809b6513216e2e6d061k.jpg"
+        ],
+        "بني قهوة": [
+          "https://ae-pic-a1.aliexpress-media.com/kf/S84cf86b4eb95428da1e9205c580f17d77.jpg"
+        ],
+        "رمادي": [
+          "https://ae-pic-a1.aliexpress-media.com/kf/S5817e66067804a758347f931adec6116t.jpg"
+        ],
+        "عنابي": [
+          "https://ae-pic-a1.aliexpress-media.com/kf/Sfe1af181858e48b382bdf70cd443e4afT.jpg"
+        ],
+        "أخضر ماتشا": [
+          "https://ae-pic-a1.aliexpress-media.com/kf/S92526cba51094f24813249a62814926aV.jpg"
+        ],
+        "بيج": [
+          "https://ae-pic-a1.aliexpress-media.com/kf/S3d0712a560484efdb170860ffa15362dr.jpg"
+        ]
+      }
     },
     {
       "id": 16,
       "cat": "sport",
       "type": "bra",
-      "name": "توب رياضي داعم بأحزمة عريضة",
+      "name": "توب رياضي مريح بحشوات",
       "price": 69,
       "old": 0,
       "badge": "",
       "sizeChart": "sport",
       "sizes": [
-        "XS",
         "S",
         "M",
-        "L",
-        "XL"
+        "L"
       ],
       "colors": [
-        {
-          "name": "زيتي فاتح",
-          "hex": "#8a9a7e"
-        },
         {
           "name": "أسود",
           "hex": "#1c1b1d"
         },
         {
+          "name": "رمادي",
+          "hex": "#8e9096"
+        },
+        {
+          "name": "أبيض",
+          "hex": "#f2efe8"
+        },
+        {
+          "name": "كحلي",
+          "hex": "#1f2a44"
+        },
+        {
+          "name": "بني كستنائي",
+          "hex": "#6b4232"
+        },
+        {
+          "name": "خاكي",
+          "hex": "#a08a6a"
+        },
+        {
           "name": "لافندر",
           "hex": "#b8a7cf"
+        },
+        {
+          "name": "وردي",
+          "hex": "#e8a3b5"
         }
       ],
-      "desc": "دعم متوسط إلى عالي مع حشوات قابلة للإزالة — مريح للتمارين القوية.",
+      "desc": "توب رياضي مريح ومرن بقصّة نحيفة وحشوات قابلة للإزالة، للتمارين واليوغا.",
       "details": [
-        "أحزمة عريضة مريحة",
-        "حشوات قابلة للإزالة",
-        "قماش يمتص العرق"
+        "توب رياضي مريح ومرن بقصّة نحيفة وحشوات قابلة للإزالة، للتمارين واليوغا"
       ],
-      "fabric": "نايلون · سباندكس",
+      "fabric": "حسب وصف القطعة",
       "care": "غسيل بارد",
-      "images": [],
-      "show": true
+      "images": [
+        "https://ae-pic-a1.aliexpress-media.com/kf/S36f2b72347ed49639edcf7479f3dc40et.jpg",
+        "https://ae-pic-a1.aliexpress-media.com/kf/Sc6fbe4366acb4769a292d5a5e7ebd0f0W.jpg",
+        "https://ae-pic-a1.aliexpress-media.com/kf/S845bb94457d04b9996469821d093af4cs.jpg",
+        "https://ae-pic-a1.aliexpress-media.com/kf/S3172678b60da4aa6b37674757f0e2ad46.jpg",
+        "https://ae-pic-a1.aliexpress-media.com/kf/S88e864a9a3044147b0f4a55ab2769f48j.jpg",
+        "https://ae-pic-a1.aliexpress-media.com/kf/S2b5beed531764f65a20634a1705b752cq.jpg"
+      ],
+      "show": true,
+      "colorImages": {
+        "أسود": [
+          "https://ae-pic-a1.aliexpress-media.com/kf/S7b55d58acbae40ac931cec09729ea8ba8.jpg"
+        ],
+        "رمادي": [
+          "https://ae-pic-a1.aliexpress-media.com/kf/Sba368766e9ce4750af04876a78660fdeQ.jpg"
+        ],
+        "أبيض": [
+          "https://ae-pic-a1.aliexpress-media.com/kf/S230d3f45a6104403aa048283a2dd021du.jpg"
+        ],
+        "كحلي": [
+          "https://ae-pic-a1.aliexpress-media.com/kf/S63243af1e2df4831a2191aa6e1f727a2b.jpg"
+        ],
+        "بني كستنائي": [
+          "https://ae-pic-a1.aliexpress-media.com/kf/S9f2eff30a0704117a6817d67372f4f6c2.jpg"
+        ],
+        "خاكي": [
+          "https://ae-pic-a1.aliexpress-media.com/kf/S8113b9b07a114f309abd302ed908d1b1g.jpg"
+        ],
+        "لافندر": [
+          "https://ae-pic-a1.aliexpress-media.com/kf/S22cc35f3dcc94cebbd87a3878e3d70823.jpg"
+        ],
+        "وردي": [
+          "https://ae-pic-a1.aliexpress-media.com/kf/S85239a8739334dc48d66ab1be14a70aaX.jpg"
+        ]
+      }
     },
     {
       "id": 17,
       "cat": "sport",
       "type": "set",
-      "name": "طقم رياضي قطعتين (توب + ليقنز)",
+      "name": "طقم رياضي سيملس: توب بأكمام + ليقنز",
       "price": 149,
       "old": 199,
       "badge": "trend",
       "featured": true,
       "sizeChart": "sport",
       "sizes": [
-        "XS",
         "S",
         "M",
-        "L",
-        "XL"
+        "L"
       ],
       "colors": [
         {
-          "name": "لافندر",
-          "hex": "#b8a7cf"
-        },
-        {
-          "name": "زيتي فاتح",
-          "hex": "#7f8f74"
-        },
-        {
           "name": "أسود",
           "hex": "#1c1b1d"
-        },
-        {
-          "name": "وردي",
-          "hex": "#d99aa0"
         }
       ],
-      "desc": "الطقم الأكثر انتشاراً في النوادي: توب داعم وليقنز سيملس بنفس اللون — تنسيق جاهز.",
+      "desc": "طقم رياضي سيملس من قطعتين: توب قصير بأكمام طويلة وليقنز عالي الخصر بنفس اللون.",
       "details": [
-        "قطعتين بنفس اللون",
-        "ليقنز خصر عالي",
-        "توب بدعم متوسط"
+        "طقم رياضي سيملس من قطعتين: توب قصير بأكمام طويلة وليقنز عالي الخصر بنفس اللون"
       ],
-      "fabric": "نايلون · سباندكس",
+      "fabric": "حسب وصف القطعة",
       "care": "غسيل بارد، تجفيف بالظل",
-      "images": [],
-      "show": true
+      "images": [
+        "https://ae-pic-a1.aliexpress-media.com/kf/S42ca58ed063f4455ab09f57386a92217F.jpg",
+        "https://ae-pic-a1.aliexpress-media.com/kf/S9b7bb69a1f164b198bb168bc2a921205x.jpg",
+        "https://ae-pic-a1.aliexpress-media.com/kf/Sad442db206af4790a99f32bf928b8483t.jpg",
+        "https://ae-pic-a1.aliexpress-media.com/kf/Se35b7e9429a64be9b777ff9259b0aacci.jpg",
+        "https://ae-pic-a1.aliexpress-media.com/kf/S2399fdd2ec284c5ea5a7da324f4c99cdZ.jpg",
+        "https://ae-pic-a1.aliexpress-media.com/kf/S3caa316d950a42be9b0e750f592597772.jpg"
+      ],
+      "show": true,
+      "colorImages": {
+        "أسود": [
+          "https://ae-pic-a1.aliexpress-media.com/kf/S3caa316d950a42be9b0e750f592597772.jpg"
+        ]
+      }
     },
     {
       "id": 18,
@@ -852,14 +1311,14 @@
       "fabric": "بوليستر مسامي · سباندكس",
       "care": "غسيل بارد",
       "images": [],
-      "show": true
+      "show": false
     },
     {
       "id": 19,
       "cat": "sport",
       "type": "tunic",
-      "name": "توب رياضي طويل بأكمام",
-      "price": 99,
+      "name": "تيشيرت رياضي واسع بأكمام طويلة",
+      "price": 109,
       "old": 129,
       "badge": "sale",
       "sizeChart": "sport",
@@ -867,50 +1326,70 @@
         "S",
         "M",
         "L",
-        "XL",
-        "2XL"
+        "XL"
       ],
       "colors": [
         {
-          "name": "أزرق داكن",
-          "hex": "#6f8faf"
+          "name": "أبيض",
+          "hex": "#f2efe8"
+        },
+        {
+          "name": "وردي",
+          "hex": "#e8a3b5"
         },
         {
           "name": "أسود",
           "hex": "#1c1b1d"
         },
         {
-          "name": "موكا",
-          "hex": "#8b6b57"
+          "name": "أزرق",
+          "hex": "#5b7fb5"
         }
       ],
-      "desc": "توب رياضي محتشم بطول للورك وقماش خفيف يجف بسرعة — ينسّق مع أي ليقنز.",
+      "desc": "تيشيرت رياضي واسع بأكمام طويلة وياقة V، قماش خفيف يسمح بالتهوية لليوغا والجري والنادي.",
       "details": [
-        "طول يغطي الورك",
-        "قماش مسامي",
-        "سحاب ربع"
+        "تيشيرت رياضي واسع بأكمام طويلة وياقة V، قماش خفيف يسمح بالتهوية لليوغا والجري والنادي"
       ],
-      "fabric": "بوليستر · سباندكس",
+      "fabric": "حسب وصف القطعة",
       "care": "غسيل بارد",
-      "images": [],
-      "show": true
+      "images": [
+        "https://ae-pic-a1.aliexpress-media.com/kf/S82ff7367df394a7893ee7b18e07e33958.jpg",
+        "https://ae-pic-a1.aliexpress-media.com/kf/Sf306b7cf9c2c4aacad2cbcbf704b2665S.jpg",
+        "https://ae-pic-a1.aliexpress-media.com/kf/Sa9db7bf5f3334556b434afa3efaa38abd.jpg",
+        "https://ae-pic-a1.aliexpress-media.com/kf/S3f018c8d19af42a4a1f96389e0936de76.jpg",
+        "https://ae-pic-a1.aliexpress-media.com/kf/Sa4bdd3e00ce247dab928bce8d1a25c72h.jpg",
+        "https://ae-pic-a1.aliexpress-media.com/kf/S79510d38e2a14c18aca75dbebec9534f0.jpg"
+      ],
+      "show": true,
+      "colorImages": {
+        "أبيض": [
+          "https://ae-pic-a1.aliexpress-media.com/kf/S9252727d0e364698b1ef1925bb2e77a5j.jpg"
+        ],
+        "وردي": [
+          "https://ae-pic-a1.aliexpress-media.com/kf/Sbbbae326b4f5418a8b6b5e31b52320daA.jpg"
+        ],
+        "أسود": [
+          "https://ae-pic-a1.aliexpress-media.com/kf/Sdc7c4e3b2eaa49f6a213d6ce7f4581c7W.jpg"
+        ],
+        "أزرق": [
+          "https://ae-pic-a1.aliexpress-media.com/kf/S0fc06475dc6741b68de2f681b8570b342.jpg"
+        ]
+      }
     },
     {
       "id": 20,
       "cat": "sport",
       "type": "leggings",
-      "name": "ليقنز بجيوب جانبية للجوال",
+      "name": "بنطلون يوغا واسع بجيوب",
       "price": 109,
       "old": 0,
       "badge": "",
       "sizeChart": "sport",
       "sizes": [
-        "XS",
         "S",
         "M",
         "L",
-        "XL",
-        "2XL"
+        "XL"
       ],
       "colors": [
         {
@@ -918,20 +1397,75 @@
           "hex": "#1c1b1d"
         },
         {
+          "name": "رمادي فاتح",
+          "hex": "#a9abb0"
+        },
+        {
           "name": "رمادي فحمي",
           "hex": "#3a3a3e"
+        },
+        {
+          "name": "أخضر",
+          "hex": "#4f7a5a"
+        },
+        {
+          "name": "زيتي",
+          "hex": "#5f6b48"
+        },
+        {
+          "name": "خاكي",
+          "hex": "#b8a07a"
+        },
+        {
+          "name": "شوكولاتة",
+          "hex": "#4a3326"
+        },
+        {
+          "name": "بني قهوة",
+          "hex": "#6b4a36"
         }
       ],
-      "desc": "ليقنز بجيبين جانبيين يشيلون الجوال وأنتِ تمشين أو تركضين.",
+      "desc": "بنطلون يوغا واسع الساق (فلير) بخصر عالي مطاطي وجيوب، قماش ناعم مرن ومحتشم للنادي والمشي.",
       "details": [
-        "جيبين جانبيين",
-        "خصر عالي",
-        "قماش ما يشف"
+        "بنطلون يوغا واسع الساق (فلير) بخصر عالي مطاطي وجيوب، قماش ناعم مرن ومحتشم للنادي والمشي"
       ],
-      "fabric": "نايلون · سباندكس",
+      "fabric": "حسب وصف القطعة",
       "care": "غسيل بارد",
-      "images": [],
-      "show": true
+      "images": [
+        "https://ae-pic-a1.aliexpress-media.com/kf/Se9a89bf585994a408c14ddae34d9c7497.jpg",
+        "https://ae-pic-a1.aliexpress-media.com/kf/Sb2dc6d2f4c904145886212b6870dc60cK.jpg",
+        "https://ae-pic-a1.aliexpress-media.com/kf/S8709c496b6ea4722aba3d927b3405593G.jpg",
+        "https://ae-pic-a1.aliexpress-media.com/kf/S367ac5c0d470419a949ae6de5b0b1490z.jpg",
+        "https://ae-pic-a1.aliexpress-media.com/kf/S6efa9a9f6d4248e8a90416a6f7b83f957.jpg",
+        "https://ae-pic-a1.aliexpress-media.com/kf/S14aab1fd2e604f248631c32eacdd3b62A.jpg"
+      ],
+      "show": true,
+      "colorImages": {
+        "أسود": [
+          "https://ae-pic-a1.aliexpress-media.com/kf/Sfa4b7ca0e17644b793e428d2ed0e654aE.jpg"
+        ],
+        "رمادي فاتح": [
+          "https://ae-pic-a1.aliexpress-media.com/kf/Se9a89bf585994a408c14ddae34d9c7497.jpg"
+        ],
+        "رمادي فحمي": [
+          "https://ae-pic-a1.aliexpress-media.com/kf/Se0b40747aacf4beca46d738d035023244.jpg"
+        ],
+        "أخضر": [
+          "https://ae-pic-a1.aliexpress-media.com/kf/S7fd8ebdf254b4bd2beaf1b0f2a1e2b54t.jpg"
+        ],
+        "زيتي": [
+          "https://ae-pic-a1.aliexpress-media.com/kf/S6efa9a9f6d4248e8a90416a6f7b83f957.jpg"
+        ],
+        "خاكي": [
+          "https://ae-pic-a1.aliexpress-media.com/kf/Sc43d111747404e97aee95bbd85577353i.jpg"
+        ],
+        "شوكولاتة": [
+          "https://ae-pic-a1.aliexpress-media.com/kf/S696a066ed6cc4362bd4552857b51e9b84.jpg"
+        ],
+        "بني قهوة": [
+          "https://ae-pic-a1.aliexpress-media.com/kf/S70d6bcc4817e4030a41f9bf88d2697a8K.jpg"
+        ]
+      }
     },
     {
       "id": 21,
@@ -977,7 +1511,7 @@
       "fabric": "ساتان ناعم",
       "care": "غسيل يدوي بارد",
       "images": [],
-      "show": true
+      "show": false
     },
     {
       "id": 22,
@@ -1018,7 +1552,7 @@
       "fabric": "قطن · بوليستر (فليس)",
       "care": "غسيل بالغسالة 30°",
       "images": [],
-      "show": true
+      "show": false
     },
     {
       "id": 23,
@@ -1060,7 +1594,7 @@
       "fabric": "قطن",
       "care": "غسيل بالغسالة 40°",
       "images": [],
-      "show": true
+      "show": false
     },
     {
       "id": 24,
@@ -1107,7 +1641,7 @@
       "fabric": "جيرسيه ناعم",
       "care": "غسيل بالغسالة دورة لطيفة",
       "images": [],
-      "show": true
+      "show": false
     },
     {
       "id": 25,
@@ -1145,7 +1679,7 @@
       "fabric": "شيفون مبطّن",
       "care": "غسيل يدوي",
       "images": [],
-      "show": true
+      "show": false
     },
     {
       "id": 26,
@@ -1190,7 +1724,7 @@
       "fabric": "شيفون",
       "care": "غسيل يدوي",
       "images": [],
-      "show": true
+      "show": false
     },
     {
       "id": 27,
@@ -1227,7 +1761,7 @@
       "fabric": "جيرسيه قطني",
       "care": "غسيل بالغسالة 30°",
       "images": [],
-      "show": true
+      "show": false
     },
     {
       "id": 28,
@@ -1260,7 +1794,7 @@
       "fabric": "شيفون",
       "care": "غسيل يدوي",
       "images": [],
-      "show": true
+      "show": false
     }
   ]
 }
