@@ -196,6 +196,8 @@ input, select, textarea { font: inherit; color: inherit; }
 .price-off { color: var(--plum); font-size: .78rem; font-weight: 700; }
 .swatches-mini { display: flex; gap: 5px; margin-top: .15rem; }
 .swatches-mini i { width: 13px; height: 13px; border-radius: 50%; border: 1px solid rgba(0, 0, 0, .12); }
+.p-ship { display: inline-flex; align-items: center; gap: .3rem; margin-top: .2rem; font-size: .74rem; color: var(--ok, #2f7a4b); font-weight: 600; }
+.p-ship svg { width: 15px; height: 15px; flex: none; }
 .empty-state { text-align: center; color: var(--muted); padding: 3rem 1rem; }
 
 /* promo banner */
@@ -336,6 +338,8 @@ input, select, textarea { font: inherit; color: inherit; }
 .size-btn { min-width: 52px; min-height: 44px; padding: .3rem .8rem; border-radius: 10px; border: 1.5px solid var(--line); background: var(--paper); font-weight: 600; font-size: .9rem; transition: all .2s; }
 .size-btn:hover { border-color: var(--ink); }
 .size-btn.on { background: var(--ink); color: var(--ivory); border-color: var(--ink); }
+.size-btn.na, .size-btn:disabled { opacity: .38; text-decoration: line-through; cursor: not-allowed; border-style: dashed; }
+.size-btn.na:hover { border-color: var(--line); }
 .size-hint { color: var(--err); font-size: .82rem; margin-top: .4rem; min-height: 1.2em; }
 .buy-row { display: grid; grid-template-columns: auto 1fr; gap: .7rem; margin-block: 1.4rem .8rem; }
 .buy-row .qty { height: 52px; }

@@ -76,17 +76,24 @@
   S.catName = id => (S.cat(id) || {}).name || '';
   S.productUrl = p => `product.html?id=${encodeURIComponent(p.id)}`;
   S.offPct = p => (p.old && p.old > p.price ? Math.round((1 - p.price / p.old) * 100) : 0);
+  /* a colour + size pair the supplier doesn't make */
+  S.isNa = (p, color, size) => Array.isArray(p.na) && p.na.includes(color + '|' + size);
   S.colorOf = (p, name) => (p.colors || []).find(c => c.name === name) || (p.colors || [])[0] || { name: '', hex: '#1c1b1d' };
 
-  /* the selected colour's own photos come first, then the shared gallery */
+  /* the selected colour's own photos come first, then the shared gallery —
+     unless that colour has a full set of its own, so another colour's photos never mix in */
   S.imagesFor = (p, colorName) => {
-    const per = (p.colorImages && colorName && p.colorImages[colorName]) || [];
-    const all = (Array.isArray(per) ? per : []).concat(Array.isArray(p.images) ? p.images : []).filter(Boolean);
+    const raw = (p.colorImages && colorName && p.colorImages[colorName]) || [];
+    const per = (Array.isArray(raw) ? raw : []).filter(Boolean);
+    const all = per.length >= 3 ? per : per.concat(Array.isArray(p.images) ? p.images : []).filter(Boolean);
     return [...new Set(all)];
   };
   const svgFor = (p, colorName) => window.Garment.svg(p.type, S.colorOf(p, colorName).hex, { label: p.name, accent: p.accent });
-  /* a supplier photo that fails to load falls back to the illustration */
+  /* Trendyol's CDN serves resized copies; AliExpress sized copies are refused off-site, so those stay full size */
+  S.thumb = (src, w) => (w && /^https:\/\/cdn\.dsmcdn\.com\/(?!mnresize\/)/.test(src) ? src.replace('https://cdn.dsmcdn.com/', `https://cdn.dsmcdn.com/mnresize/${w}/-/`) : src);
+  /* a resized photo that fails retries at full size; a full-size failure falls back to the illustration */
   S.imgFail = img => {
+    if (img.dataset.full) { const full = img.dataset.full; delete img.dataset.full; img.src = full; return; }
     const p = S.product(img.dataset.pid) || (state.data.products || []).find(x => String(x.id) === img.dataset.pid);
     if (!p) { img.remove(); return; }
     const holder = document.createElement('span');
@@ -94,14 +101,36 @@
     holder.innerHTML = svgFor(p, img.dataset.color);
     img.replaceWith(holder);
   };
-  S.imgTag = (p, src, colorName, opts) => `<img src="${esc(src)}" alt="${esc(p.name)}" loading="${opts && opts.eager ? 'eager' : 'lazy'}" decoding="async" referrerpolicy="no-referrer" data-pid="${esc(p.id)}" data-color="${esc(colorName || '')}" onerror="Sora.imgFail(this)"${opts && opts.cls ? ` class="${opts.cls}"` : ''}>`;
+  S.imgTag = (p, src, colorName, opts) => {
+    opts = opts || {};
+    const shown = S.thumb(src, opts.w);
+    return `<img src="${esc(shown)}" alt="${esc(p.name)}" loading="${opts.eager ? 'eager' : 'lazy'}" decoding="async" referrerpolicy="no-referrer" data-pid="${esc(p.id)}" data-color="${esc(colorName || '')}"${shown !== src ? ` data-full="${esc(src)}"` : ''} onerror="Sora.imgFail(this)"${opts.cls ? ` class="${opts.cls}"` : ''}>`;
+  };
   S.media = (p, colorName, opts) => {
     opts = opts || {};
     const imgs = S.imagesFor(p, colorName);
     if (!imgs.length) return svgFor(p, colorName);
-    let html = S.imgTag(p, imgs[0], colorName, opts);
-    if (opts.hover && imgs[1]) html += S.imgTag(p, imgs[1], colorName, { cls: 'img-alt' });
+    const w = opts.w || 600;
+    let html = S.imgTag(p, imgs[0], colorName, { ...opts, w });
+    if (opts.hover && imgs[1]) html += S.imgTag(p, imgs[1], colorName, { cls: 'img-alt', w });
     return html;
+  };
+
+  /* delivery window: a product may ship faster than the store default ("7-14" vs "15-30") */
+  const parseDays = s => { const m = String(s || '').match(/(\d+)\s*-\s*(\d+)/); return m ? [Number(m[1]), Number(m[2])] : null; };
+  S.shipDaysOf = p => (p && parseDays(p.shipDays) ? p.shipDays : S.config.shippingDays);
+  /* an order arrives with its slowest piece */
+  S.shipWindow = lines => {
+    const ds = (lines || []).map(l => parseDays(S.shipDaysOf(l.p))).filter(Boolean);
+    if (!ds.length) return S.config.shippingDays;
+    return `${Math.max(...ds.map(d => d[0]))}-${Math.max(...ds.map(d => d[1]))}`;
+  };
+  /* the full range across the catalogue, for store-wide copy */
+  S.shipRange = () => {
+    const ds = S.products.map(p => parseDays(S.shipDaysOf(p))).filter(Boolean);
+    if (!ds.length) return S.config.shippingDays;
+    const lo = Math.min(...ds.map(d => d[0])), hi = Math.max(...ds.map(d => d[1]));
+    return lo === hi ? String(lo) : `${lo}-${hi}`;
   };
 
   /* ───── favourites ───── */
@@ -129,7 +158,7 @@
     const key = lineKey(l.id, l.color, l.size);
     if (!p) return includeUnavailable ? { ...l, qty, key, p: null, unavailable: true } : null;
     const color = (p.colors || []).find(c => c.name === l.color);
-    const ok = !!color && (p.sizes || []).includes(l.size);
+    const ok = !!color && (p.sizes || []).includes(l.size) && !S.isNa(p, l.color, l.size);
     if (!ok && !includeUnavailable) return null;
     return { ...l, qty, key, p, unit: p.price, line: round2(p.price * qty), color: color || { name: l.color, hex: '#bbbbbb' }, unavailable: !ok };
   }).filter(Boolean);
@@ -234,6 +263,7 @@
         <a class="p-name" href="${S.productUrl(p)}">${esc(p.name)}</a>
         <div class="p-price"><span class="price">${money(p.price)}</span>${off ? `<span class="price-old">${fmt(p.old)}</span><span class="price-off" dir="ltr">-${off}%</span>` : ''}</div>
         ${sw ? `<div class="swatches-mini">${sw}</div>` : ''}
+        ${p.shipDays && S.shipDaysOf(p) !== S.config.shippingDays ? `<div class="p-ship">${I.truck}<span>توصيل ${esc(p.shipDays)} يوم</span></div>` : ''}
       </div>
     </article>`;
   };

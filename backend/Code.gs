@@ -9,6 +9,11 @@
  *   MOYASAR_SECRET_KEY      optional. sk_live_… (or sk_test_…) — enables online payment.
  *   MOYASAR_WEBHOOK_SECRET  optional. The "secret token" set on the Moyasar webhook.
  *   TURNSTILE_SECRET        optional. Cloudflare Turnstile secret — when set, every order needs a valid anti-bot token.
+ *   CJ_API_KEY              optional. CJ Dropshipping API key — when set, paid orders are placed with CJ automatically,
+ *                           paid from the CJ wallet balance, and tracking numbers are pulled back (run installTriggers once).
+ *   CJ_SANDBOX              optional. "1" = CJ test orders (no real money, no shipping) while you try the flow.
+ *   CJ_LOGISTICS            optional. Preferred CJ shipping lines in order, comma separated (default: cheapest line).
+ *   CJ_MIN_BALANCE_USD      optional. Daily email when the CJ wallet drops below this (default 25).
  *
  * Prices are never trusted from the browser: every order is re-priced from the
  * published products.json, and every payment is fetched from Moyasar and checked
@@ -21,8 +26,8 @@ var SHEET_ORDERS = 'Orders';
 var SHEET_SUPPLIERS = 'Suppliers';
 var ORDER_HEADERS = ['orderId', 'createdAt', 'status', 'payment', 'paymentId', 'name', 'phone', 'city', 'district',
   'address', 'nationalAddress', 'notes', 'items', 'subtotal', 'discount', 'coupon', 'shipping', 'codFee', 'total',
-  'supplierRef', 'trackingNo', 'carrier', 'updatedAt', 'log'];
-var SUPPLIER_HEADERS = ['productId', 'supplier', 'url', 'cost', 'notes'];
+  'supplierRef', 'trackingNo', 'carrier', 'updatedAt', 'log', 'region', 'supplierStatus', 'supplierInfo', 'trackingUrl', 'nameEn'];
+var SUPPLIER_HEADERS = ['productId', 'supplier', 'url', 'cost', 'notes', 'ref', 'variants', 'logistic', 'from'];
 var STATUSES = ['awaiting_payment', 'new', 'paid', 'processing', 'shipped', 'delivered', 'cancelled', 'refunded'];
 var PAID_LIKE = ['paid', 'processing', 'shipped', 'delivered', 'refunded'];
 var STALE_DATA_ERRORS = ['coupon_invalid', 'coupon_min_not_met', 'product_unavailable', 'color_invalid', 'size_invalid', 'cod_disabled', 'online_payment_disabled'];
@@ -30,6 +35,25 @@ var ORDER_RE = /^SR\d{6}-[A-Z0-9]{5}$/;
 var UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 var TZ = 'Asia/Riyadh';
 var STORE_TTL = 120;
+/* checkout city (Arabic) → [English city, English region] for supplier shipping labels */
+var SA_CITIES = {
+  'الرياض': ['Riyadh', 'Riyadh'], 'جدة': ['Jeddah', 'Makkah'], 'مكة المكرمة': ['Mecca', 'Makkah'], 'المدينة المنورة': ['Medina', 'Madinah'],
+  'الدمام': ['Dammam', 'Eastern Province'], 'الخبر': ['Al Khobar', 'Eastern Province'], 'الظهران': ['Dhahran', 'Eastern Province'],
+  'الأحساء': ['Al Hofuf', 'Eastern Province'], 'القطيف': ['Qatif', 'Eastern Province'], 'الجبيل': ['Jubail', 'Eastern Province'],
+  'الطائف': ['Taif', 'Makkah'], 'تبوك': ['Tabuk', 'Tabuk'], 'بريدة': ['Buraidah', 'Al Qassim'], 'عنيزة': ['Unaizah', 'Al Qassim'],
+  'الرس': ['Ar Rass', 'Al Qassim'], 'حائل': ['Hail', 'Hail'], 'أبها': ['Abha', 'Asir'], 'خميس مشيط': ['Khamis Mushait', 'Asir'],
+  'بيشة': ['Bisha', 'Asir'], 'جازان': ['Jazan', 'Jazan'], 'نجران': ['Najran', 'Najran'], 'ينبع': ['Yanbu', 'Madinah'],
+  'الباحة': ['Al Bahah', 'Al Bahah'], 'سكاكا': ['Sakaka', 'Al Jawf'], 'عرعر': ['Arar', 'Northern Borders'], 'القريات': ['Al Qurayyat', 'Al Jawf'],
+  'حفر الباطن': ['Hafar Al Batin', 'Eastern Province'], 'الخرج': ['Al Kharj', 'Riyadh'], 'المجمعة': ['Al Majmaah', 'Riyadh'],
+  'القنفذة': ['Al Qunfudhah', 'Makkah'],
+};
+var CJ_BASE = 'https://developers.cjdropshipping.com/api2.0/v1';
+var FAIL_CAP = 8;
+var USD_SAR = 3.75;
+/* supplierStatus: '' (not sent) → queued → ordering → ordered → shipped → delivered;
+   side states: awaiting_balance (CJ wallet too low, re-tried every 30 min), failed (retried with back-off, emailed after 3),
+   hold (out of stock / price above what the customer paid — waits for the owner), manual (not linked to CJ) */
+var SA_REGIONS = ['Riyadh', 'Makkah', 'Madinah', 'Eastern Province', 'Al Qassim', 'Asir', 'Tabuk', 'Hail', 'Northern Borders', 'Jazan', 'Najran', 'Al Bahah', 'Al Jawf'];
 
 /* ───────────── entry points ───────────── */
 
@@ -64,7 +88,13 @@ function handle_(body) {
       case 'updateOrder': requireAdmin_(body); return updateOrder_(body);
       case 'getSuppliers': requireAdmin_(body); return getSuppliers_();
       case 'setSuppliers': requireAdmin_(body); return setSuppliers_(body);
-      case 'adminCheck': requireAdmin_(body); return { ok: true, online: !!prop_('MOYASAR_SECRET_KEY'), email: !!prop_('OWNER_EMAIL'), captcha: !!prop_('TURNSTILE_SECRET') };
+      case 'adminCheck': requireAdmin_(body); return { ok: true, online: !!prop_('MOYASAR_SECRET_KEY'), email: !!prop_('OWNER_EMAIL'), captcha: !!prop_('TURNSTILE_SECRET'), cj: !!prop_('CJ_API_KEY') };
+      case 'fulfillOrder': requireAdmin_(body); return fulfillOrder_(str_(body.orderId, 20).toUpperCase(), 'admin', { force: body.force === true });
+      case 'cjStatus': requireAdmin_(body); return cjStatus_();
+      case 'cjSearch': requireAdmin_(body); return cjSearch_(body);
+      case 'cjProduct': requireAdmin_(body); return cjProduct_(body);
+      case 'cjSourcingCreate': requireAdmin_(body); return cjSourcingCreate_(body);
+      case 'cjSourcingStatus': requireAdmin_(body); return cjSourcingStatus_();
       default: return { ok: false, error: 'unknown_action' };
     }
   } catch (err) {
@@ -141,8 +171,11 @@ function rateOk_(key, max, seconds, peek) {
 function sheet_(name, headers) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sh = ss.getSheetByName(name);
+  /* a new sheet has 26 columns; writing past getMaxColumns() throws */
+  var grow = function (need) { if (sh.getMaxColumns() < need) sh.insertColumnsAfter(sh.getMaxColumns(), need - sh.getMaxColumns()); };
   if (!sh) {
     sh = ss.insertSheet(name);
+    grow(headers.length);
     sh.getRange(1, 1, sh.getMaxRows(), headers.length).setNumberFormat('@');
     sh.getRange(1, 1, 1, headers.length).setValues([headers]);
     sh.setFrozenRows(1);
@@ -151,7 +184,12 @@ function sheet_(name, headers) {
   var lastCol = Math.max(1, sh.getLastColumn());
   var have = sh.getRange(1, 1, 1, lastCol).getValues()[0];
   var missing = headers.filter(function (h) { return have.indexOf(h) === -1; });
-  if (missing.length) sh.getRange(1, have.filter(String).length + 1, 1, missing.length).setValues([missing]);
+  if (missing.length) {
+    var start = have.filter(String).length + 1;
+    grow(start + missing.length - 1);
+    sh.getRange(1, start, sh.getMaxRows(), missing.length).setNumberFormat('@');
+    sh.getRange(1, start, 1, missing.length).setValues([missing]);
+  }
   return sh;
 }
 
@@ -189,7 +227,9 @@ function writeFields_(ctx, fields) {
 
 function appendLog_(ctx, text) {
   var prev = String(ctx.order.log || '');
-  writeFields_(ctx, { log: (prev ? prev + '\n' : '') + now_() + ' ' + text, updatedAt: now_() });
+  var log = (prev ? prev + '\n' : '') + now_() + ' ' + text;
+  if (log.length > 40000) log = '…' + log.slice(-40000);   // a Sheets cell holds at most 50,000 characters
+  writeFields_(ctx, { log: log, updatedAt: now_() });
 }
 
 function publicOrder_(o) {
@@ -197,11 +237,12 @@ function publicOrder_(o) {
   try { items = JSON.parse(o.items || '[]'); } catch (e) { items = []; }
   return {
     orderId: String(o.orderId), createdAt: String(o.createdAt), status: String(o.status), payment: String(o.payment),
-    paymentId: String(o.paymentId || ''), name: String(o.name), phone: String(o.phone), city: String(o.city),
+    paymentId: String(o.paymentId || ''), name: String(o.name), nameEn: String(o.nameEn || ''), phone: String(o.phone), city: String(o.city), region: String(o.region || ''),
     district: String(o.district), address: String(o.address), nationalAddress: String(o.nationalAddress || ''),
     notes: String(o.notes || ''), items: items, subtotal: Number(o.subtotal), discount: Number(o.discount),
     coupon: String(o.coupon || ''), shipping: Number(o.shipping), codFee: Number(o.codFee), total: Number(o.total),
     supplierRef: String(o.supplierRef || ''), trackingNo: String(o.trackingNo || ''), carrier: String(o.carrier || ''),
+    trackingUrl: String(o.trackingUrl || ''), supplierStatus: String(o.supplierStatus || ''), supplierInfo: parseJson_(o.supplierInfo) || {},
     updatedAt: String(o.updatedAt || ''), log: String(o.log || ''),
   };
 }
@@ -260,6 +301,7 @@ function priceWith_(store, raw, couponCode, payment) {
     if (!c) fail_('color_invalid');
     var s = (p.sizes || []).filter(function (x) { return str_(x, 30) === size; })[0];
     if (s == null) fail_('size_invalid');
+    if (Array.isArray(p.na) && p.na.indexOf(c.name + '|' + s) !== -1) fail_('size_invalid');
     var key = id + '|' + c.name + '|' + s;
     if (merged[key]) merged[key].qty = Math.min(10, merged[key].qty + qty);
     else merged[key] = { id: id, name: p.name, color: c.name, size: String(s), qty: qty, unit: round2_(p.price) };
@@ -300,13 +342,19 @@ function createOrder_(b) {
   if (b.website) fail_('rejected');                       // honeypot field
   var c = b.customer || {};
   var name = str_(c.name, 60), phone = normPhone_(c.phone), city = str_(c.city, 40), district = str_(c.district, 60);
-  var address = str_(c.address, 200), national = str_(c.nationalAddress, 8).toUpperCase(), notes = str_(c.notes, 300);
+  var address = str_(c.address, 200), national = str_(c.nationalAddress, 12).replace(/\s/g, '').toUpperCase(), notes = str_(c.notes, 300);
+  var nameEn = str_(c.nameEn, 50);
   if (name.length < 3) fail_('name_invalid');
+  if (!/^[A-Za-z][A-Za-z .'-]{2,49}$/.test(nameEn)) fail_('name_en_invalid');
   if (!phone) fail_('phone_invalid');
   if (city.length < 2) fail_('city_invalid');
+  var region = SA_CITIES[city] ? SA_CITIES[city][1] : str_(c.region, 30);
+  if (SA_REGIONS.indexOf(region) === -1) fail_('region_invalid');
   if (district.length < 2) fail_('district_invalid');
   if (address.length < 5) fail_('address_invalid');
-  if (national && !/^[A-Z]{4}\d{4}$/.test(national)) fail_('national_address_invalid');
+  /* Saudi carriers must refuse parcels without a National Address (TGA, from 1 Jan 2026) */
+  if (!national) fail_('national_address_required');
+  if (!/^[A-Z]{4}\d{4}$/.test(national)) fail_('national_address_invalid');
   var raw = Array.isArray(b.items) ? b.items : [];
   if (!raw.length) fail_('items_invalid');
   if (raw.length > 20) fail_('too_many_items');
@@ -338,8 +386,8 @@ function createOrder_(b) {
     do { orderId = newOrderId_(); } while (taken[orderId]);
     var status = payment === 'cod' ? 'new' : 'awaiting_payment';
     var rec = {
-      orderId: orderId, createdAt: now_(), status: status, payment: payment, paymentId: '', name: name, phone: phone,
-      city: city, district: district, address: address, nationalAddress: national, notes: notes, items: JSON.stringify(priced.lines),
+      orderId: orderId, createdAt: now_(), status: status, payment: payment, paymentId: '', name: name, nameEn: nameEn, phone: phone,
+      city: city, region: region, district: district, address: address, nationalAddress: national, notes: notes, items: JSON.stringify(priced.lines),
       subtotal: t.subtotal, discount: t.discount, coupon: t.coupon, shipping: t.shipping, codFee: t.codFee, total: t.total,
       supplierRef: '', trackingNo: '', carrier: '', updatedAt: now_(), log: now_() + ' created (' + payment + ')',
     };
@@ -428,7 +476,9 @@ function verifyPayment_(b) {
       fail_('payment_needs_review');
     }
     reinstated = st === 'cancelled';
-    writeFields_(fresh, { status: 'paid', paymentId: paymentId });
+    var paidFields = { status: 'paid', paymentId: paymentId };
+    if (prop_('CJ_API_KEY') && !String(fresh.order.supplierStatus || '')) paidFields.supplierStatus = 'queued';
+    writeFields_(fresh, paidFields);
     appendLog_(fresh, (reinstated ? 'REINSTATED (paid after cancel) ' : 'paid via Moyasar ') + paymentId + ' (' + ((p.source && p.source.type) || 'card') + ')');
   } finally {
     lock.releaseLock();
@@ -443,7 +493,12 @@ function moyasarWebhook_(b) {
   if (b.type !== 'payment_paid' || !b.data) return { ok: true, ignored: true };
   var orderId = b.data.metadata && b.data.metadata.order_id;
   if (!orderId) return { ok: true, ignored: true };
-  return verifyPayment_({ orderId: String(orderId), paymentId: String(b.data.id) });
+  var r = verifyPayment_({ orderId: String(orderId), paymentId: String(b.data.id) });
+  /* server-to-server, so the extra seconds don't keep a shopper waiting; the queue trigger is the safety net */
+  if (r && r.ok && prop_('CJ_API_KEY')) {
+    try { fulfillOrder_(String(r.orderId), 'webhook'); } catch (err) { console.error('fulfil after webhook', err); }
+  }
+  return r;
 }
 
 function trackOrder_(b) {
@@ -455,7 +510,7 @@ function trackOrder_(b) {
   var o = publicOrder_(ctx.order);
   return {
     ok: true, orderId: o.orderId, status: o.status, payment: o.payment, createdAt: o.createdAt, total: o.total,
-    carrier: o.carrier, trackingNo: o.trackingNo, city: o.city,
+    carrier: o.carrier, trackingNo: o.trackingNo, trackingUrl: /^https:\/\//.test(o.trackingUrl) ? o.trackingUrl : '', city: o.city,
     items: o.items.map(function (i) { return { name: i.name, color: i.color, size: i.size, qty: i.qty }; }),
   };
 }
@@ -489,10 +544,19 @@ function updateOrder_(b) {
     [['supplierRef', 120], ['trackingNo', 80], ['carrier', 60]].forEach(function (f) {
       if (b[f[0]] != null && str_(b[f[0]], f[1]) !== String(ctx.order[f[0]] || '')) fields[f[0]] = str_(b[f[0]], f[1]);
     });
+    var info = parseJson_(ctx.order.supplierInfo) || {};
+    var cjIds = Object.keys(info.cj || {}).map(function (k) { return String(info.cj[k].orderId || ''); }).filter(String);
+    var ss = String(ctx.order.supplierStatus || '');
+    /* a supplier order number typed by hand means the owner bought it themselves: take it out of the CJ queue */
+    if (fields.supplierRef && cjIds.indexOf(fields.supplierRef) === -1 && ['ordered', 'shipped', 'delivered'].indexOf(ss) === -1) fields.supplierStatus = 'manual';
+    if (b.manualHandled && (info.manual || []).length && !info.manualHandled) {
+      info.manualHandled = now_();
+      fields.supplierInfo = JSON.stringify(info);
+    }
     var note = str_(b.note, 200);
     if (Object.keys(fields).length || note) {
       writeFields_(ctx, fields);
-      appendLog_(ctx, 'admin: ' + Object.keys(fields).map(function (k) { return k + '=' + fields[k]; }).join(', ') + (note ? ' — ' + note : ''));
+      appendLog_(ctx, 'admin: ' + Object.keys(fields).map(function (k) { return k === 'supplierInfo' ? 'manual lines bought by hand' : k + '=' + fields[k]; }).join(', ') + (note ? ' — ' + note : ''));
     }
     return { ok: true, order: publicOrder_(ctx.order) };
   } finally {
@@ -506,9 +570,28 @@ function getSuppliers_() {
   var map = {};
   all.rows.forEach(function (r) {
     var o = toObj_(all.headers, r, 0);
-    if (o.productId !== '' && o.productId != null) map[String(o.productId)] = { supplier: String(o.supplier || ''), url: String(o.url || ''), cost: Number(o.cost) || 0, notes: String(o.notes || '') };
+    if (o.productId !== '' && o.productId != null) {
+      map[String(o.productId)] = { supplier: String(o.supplier || ''), url: String(o.url || ''), cost: Number(o.cost) || 0, notes: String(o.notes || ''),
+        ref: String(o.ref || ''), variants: parseJson_(o.variants) || {}, logistic: String(o.logistic || ''), from: String(o.from || '') };
+    }
   });
   return { ok: true, map: map };
+}
+
+function parseJson_(s) {
+  if (s && typeof s === 'object') return s;
+  try { return JSON.parse(String(s || '')); } catch (e) { return null; }
+}
+
+/* variants: {"<colour>|<size>": "<CJ vid>"} — keys use the store's own colour and size spelling */
+function cleanVariants_(v) {
+  var src = parseJson_(v) || {}, out = {}, n = 0;
+  Object.keys(src).forEach(function (k) {
+    if (n >= 300) return;
+    var key = str_(k, 100), vid = str_(src[k], 60);
+    if (key.indexOf('|') > 0 && vid) { out[key] = vid; n++; }
+  });
+  return out;
 }
 
 /* upsert: entries in `map` are added/replaced, ids in `remove` are deleted, everything else is kept */
@@ -524,12 +607,20 @@ function setSuppliers_(b) {
       var s = updates[id] || {};
       var url = str_(s.url, 500);
       if (url && !/^https?:\/\//i.test(url)) fail_('url_invalid');
-      current[str_(id, 20)] = { supplier: str_(s.supplier, 60), url: url, cost: round2_(Number(s.cost) || 0), notes: str_(s.notes, 300) };
+      var prev = current[str_(id, 20)] || {};
+      /* the admin panel may not know the CJ fields yet: keep stored ones unless new ones are sent */
+      current[str_(id, 20)] = {
+        supplier: str_(s.supplier, 60), url: url, cost: round2_(Number(s.cost) || 0), notes: str_(s.notes, 300),
+        ref: s.ref != null ? str_(s.ref, 60) : (prev.ref || ''),
+        variants: s.variants != null ? cleanVariants_(s.variants) : (prev.variants || {}),
+        logistic: s.logistic != null ? str_(s.logistic, 60) : (prev.logistic || ''),
+        from: s.from != null ? str_(s.from, 4).toUpperCase() : (prev.from || ''),
+      };
     });
     remove.forEach(function (id) { delete current[id]; });
     var rows = Object.keys(current).map(function (id) {
       var s = current[id];
-      return [id, s.supplier, s.url, s.cost, s.notes].map(cell_);
+      return [id, s.supplier, s.url, s.cost, s.notes, s.ref || '', JSON.stringify(s.variants || {}), s.logistic || '', s.from || ''].map(cell_);
     });
     var sh = sheet_(SHEET_SUPPLIERS, SUPPLIER_HEADERS);
     var last = sh.getLastRow();
@@ -544,7 +635,591 @@ function setSuppliers_(b) {
   }
 }
 
+/* ───────────── CJ Dropshipping: automatic supplier orders ───────────── */
+
+/* CJ returns the same token for 24 h and tokens last ~180 days; never call CJ's logout —
+   it would also kill the token the automation is using. */
+function cjToken_(force) {
+  var key = prop_('CJ_API_KEY');
+  if (!key) fail_('cj_not_configured');
+  var props = PropertiesService.getScriptProperties();
+  var t = parseJson_(props.getProperty('CJ_TOKEN'));
+  var fp = key.slice(-6);
+  if (!force && t && t.accessToken && t.fp === fp && Date.parse(t.expires) > Date.now() + 7 * 86400000) return t.accessToken;
+  var res = UrlFetchApp.fetch(CJ_BASE + '/authentication/getAccessToken', {
+    method: 'post', contentType: 'application/json', muteHttpExceptions: true, payload: JSON.stringify({ apiKey: key }),
+  });
+  var j = parseJson_(res.getContentText()) || {};
+  if (res.getResponseCode() !== 200 || Number(j.code) !== 200 || !j.data || !j.data.accessToken) {
+    console.error('CJ auth failed', j.code, j.message, j.requestId);
+    fail_('cj_auth_failed');
+  }
+  props.setProperty('CJ_TOKEN', JSON.stringify({ accessToken: j.data.accessToken, expires: j.data.accessTokenExpiryDate, openId: String(j.data.openId || ''), fp: fp }));
+  return j.data.accessToken;
+}
+
+/* free CJ accounts are limited to 1 request per second */
+function cjThrottle_() {
+  var cache = CacheService.getScriptCache();
+  var wait = Number(cache.get('cj_last') || 0) + 1100 - Date.now();
+  if (wait > 0) Utilities.sleep(Math.min(wait, 2000));
+  try { cache.put('cj_last', String(Date.now()), 30); } catch (e) { /* cache full */ }
+}
+
+/* {ok, http, code, data, message, requestId}; CJ's own rule: success = HTTP 200 and code 200 */
+function cjCall_(method, path, body, query) {
+  var parts = [];
+  Object.keys(query || {}).forEach(function (k) {
+    [].concat(query[k]).forEach(function (v) { if (v !== '' && v != null) parts.push(encodeURIComponent(k) + '=' + encodeURIComponent(v)); });
+  });
+  var url = CJ_BASE + path + (parts.length ? '?' + parts.join('&') : '');
+  var forceToken = false, last = null;
+  for (var attempt = 0; attempt < 3; attempt++) {
+    cjThrottle_();
+    /* a timeout, DNS error or failed login must come back as a result, never as a throw:
+       callers hold order state in memory (e.g. a CJ order that was just paid) and must get to save it */
+    var res;
+    try {
+      var opts = { method: method, muteHttpExceptions: true, headers: { 'CJ-Access-Token': cjToken_(forceToken) } };
+      if (body != null) { opts.contentType = 'application/json'; opts.payload = JSON.stringify(body); }
+      res = UrlFetchApp.fetch(url, opts);
+    } catch (err) {
+      last = { ok: false, http: 0, code: code_(err) === 'cj_auth_failed' ? 'auth' : 'network', data: null, message: code_(err), requestId: '' };
+      if (last.code === 'auth') break;
+      Utilities.sleep(1500 * (attempt + 1));
+      continue;
+    }
+    var http = res.getResponseCode();
+    var j = parseJson_(res.getContentText()) || {};
+    var code = j.code == null ? http : Number(j.code);
+    last = { ok: http === 200 && code === 200, http: http, code: code, data: j.data, message: String(j.message || ''), requestId: String(j.requestId || '') };
+    if (last.ok) return last;
+    if ((http === 401 || code === 1600001 || code === 1600002) && !forceToken) { forceToken = true; continue; }
+    if (code === 1600200 || code === 1600000 || code === 1600301 || http === 429 || http >= 500) { Utilities.sleep(1500 * (attempt + 1)); continue; }
+    break;
+  }
+  console.warn('CJ ' + path + ' failed', last.code, last.message, last.requestId);
+  return last;
+}
+
+function cjAddress_(o) {
+  var c = SA_CITIES[String(o.city)];
+  var d = normPhone_(o.phone);
+  return {
+    shippingCountryCode: 'SA', shippingCountry: 'Saudi Arabia',
+    shippingProvince: String(o.region || (c ? c[1] : '')) || 'Riyadh',
+    shippingCity: c ? c[0] : str_(o.city, 50), shippingCounty: str_(o.district, 50),
+    shippingAddress: str_(o.address + '، ' + o.district + '، ' + o.city, 480),
+    shippingAddress2: o.nationalAddress ? 'National Address: ' + String(o.nationalAddress) : '',
+    shippingCustomerName: str_(o.nameEn || o.name, 50), shippingPhone: d ? '+966' + d.slice(1) : '',
+  };
+}
+
+/* the product's own line, then CJ_LOGISTICS, then the cheapest line promising ≤ 25 days */
+function cjPickLogistic_(options, preferred) {
+  var list = (Array.isArray(options) ? options : []).filter(function (x) { return x && x.logisticName; });
+  if (!list.length) return null;
+  var wanted = (preferred || []).concat(prop_('CJ_LOGISTICS').split(',')).map(function (s) { return String(s).trim(); }).filter(String);
+  for (var i = 0; i < wanted.length; i++) {
+    var hit = list.filter(function (x) { return x.logisticName === wanted[i]; })[0];
+    if (hit) return hit;
+  }
+  var maxDays = function (x) { var m = String(x.logisticAging || '').match(/(\d+)\s*$/); return m ? Number(m[1]) : 99; };
+  var fast = list.filter(function (x) { return maxDays(x) <= 25; });
+  return (fast.length ? fast : list).slice().sort(function (a, b) { return Number(a.logisticPrice) - Number(b.logisticPrice); })[0];
+}
+
+/* Places (and pays from the CJ wallet) the CJ part of a paid order. Safe to call again:
+   our order id is CJ's orderNumber, and CJ refuses a duplicate (1603003). */
+function fulfillOrder_(orderId, source, opts) {
+  if (!ORDER_RE.test(orderId)) fail_('order_invalid');
+  if (!prop_('CJ_API_KEY')) fail_('cj_not_configured');
+  var lock = LockService.getScriptLock();
+  lock.waitLock(20000);
+  var ctx;
+  try {
+    ctx = findOrder_(orderId);
+    if (!ctx) fail_('order_not_found');
+    var st = String(ctx.order.status), ss = String(ctx.order.supplierStatus || '');
+    var info = parseJson_(ctx.order.supplierInfo) || {};
+    if (['ordered', 'shipped', 'delivered'].indexOf(ss) !== -1) return { ok: true, already: true, supplierStatus: ss, supplierRef: String(ctx.order.supplierRef || '') };
+    /* COD orders go to CJ only when the owner sends them (cash isn't collected yet); after that the queue may retry them */
+    var cod = st === 'new' && String(ctx.order.payment) === 'cod' && (source === 'admin' || ss !== '');
+    if (!(st === 'paid' || st === 'processing' || cod)) fail_('order_not_paid');
+    if (ss === 'manual' && source !== 'admin') return { ok: false, supplierStatus: ss };
+    if (ss === 'ordering' && source !== 'reconcile' && Date.now() - (info.startedAt || 0) < 15 * 60000) return { ok: false, busy: true, supplierStatus: ss };
+    info.startedAt = Date.now();
+    info.attempts = (info.attempts || 0) + 1;
+    writeFields_(ctx, { supplierStatus: 'ordering', supplierInfo: JSON.stringify(info) });
+  } finally {
+    lock.releaseLock();
+  }
+  var out;
+  try { out = placeCjOrders_(ctx.order, opts || {}); } catch (err) { out = { status: 'failed', error: code_(err) }; }
+  return finishFulfil_(orderId, out);
+}
+
+/* the CJ order record is written the moment CJ confirms it, so nothing later in the run can lose it */
+function saveCjProgress_(orderId, cj) {
+  var lock = LockService.getScriptLock();
+  lock.waitLock(20000);
+  try {
+    var ctx = findOrder_(orderId);
+    if (!ctx) return;
+    var info = parseJson_(ctx.order.supplierInfo) || {};
+    info.cj = cj;
+    var refs = Object.keys(cj).map(function (k) { return cj[k].orderId; }).filter(String).join(', ');
+    writeFields_(ctx, refs ? { supplierInfo: JSON.stringify(info), supplierRef: refs } : { supplierInfo: JSON.stringify(info) });
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function placeCjOrders_(o, opts) {
+  var items = parseJson_(o.items) || [];
+  var sup = getSuppliers_().map;
+  var info = parseJson_(o.supplierInfo) || {};
+  info.cj = info.cj || {};
+  info.seq = info.seq || {};
+  var groups = {}, order = [], manual = [];
+  items.forEach(function (l, i) {
+    var s = sup[String(l.id)];
+    var isCj = !!s && /^cj/i.test(String(s.supplier || ''));
+    var vid = isCj ? (s.variants || {})[l.color + '|' + l.size] : '';
+    if (!vid) { manual.push({ name: l.name, color: l.color, size: l.size, qty: l.qty, reason: isCj ? 'variant_unmapped' : 'not_cj', url: s ? s.url : '' }); return; }
+    var from = String(s.from || 'CN').toUpperCase();
+    if (!groups[from]) { groups[from] = { products: [], lines: [], logistic: [], estUsd: 0, revenueSar: 0 }; order.push(from); }
+    groups[from].products.push({ vid: vid, quantity: Number(l.qty), storeLineItemId: o.orderId + '-' + (i + 1) });
+    groups[from].lines.push({ vid: vid, line: l, url: s.url });
+    if (s.logistic) groups[from].logistic.push(s.logistic);
+    groups[from].estUsd += (Number(s.cost) || 0) / USD_SAR * Number(l.qty);
+    groups[from].revenueSar += Number(l.line) || Number(l.unit) * Number(l.qty) || 0;
+  });
+  if (!order.length) return { status: 'manual', info: info, manual: manual };
+  var numberOf = function (from, gi) {
+    return String(o.orderId) + (order.length > 1 ? '-' + (gi + 1) : '') + (info.seq[from] ? '-R' + info.seq[from] : '');
+  };
+
+  /* an earlier run may have created the CJ order and died before saving it: adopt it before anything else,
+     so the wallet, stock and price checks never run against our own already-paid order */
+  order.forEach(function (from, gi) {
+    if (info.cj[from] && info.cj[from].orderId) return;
+    var ex = cjCall_('get', '/shopping/order/getOrderDetail', null, { orderId: numberOf(from, gi) });
+    if (ex.ok && ex.data && ex.data.orderId) {
+      info.cj[from] = { orderNumber: numberOf(from, gi), orderId: String(ex.data.orderId), logistic: String(ex.data.logisticName || ''),
+        amountUsd: Number(ex.data.orderAmount) || 0, status: String(ex.data.orderStatus || ''), vids: groups[from].products.map(function (p) { return p.vid; }), adopted: true };
+    }
+  });
+  /* lines linked to CJ after their group's CJ order was placed are not in that order */
+  order.forEach(function (from) {
+    var rec = info.cj[from];
+    if (!rec || !rec.orderId || !Array.isArray(rec.vids)) return;
+    groups[from].lines.forEach(function (x) {
+      if (rec.vids.indexOf(x.vid) === -1) manual.push({ name: x.line.name, color: x.line.color, size: x.line.size, qty: x.line.qty, reason: 'not_in_cj_order', url: x.url });
+    });
+  });
+
+  var sandbox = prop_('CJ_SANDBOX') === '1';
+  var est = 0;
+  order.forEach(function (k) { if (!(info.cj[k] && info.cj[k].orderId)) est += groups[k].estUsd; });
+  /* sandbox orders never touch the wallet, so an empty wallet must not block a test */
+  var bal = sandbox || est === 0 ? { ok: false } : cjCall_('get', '/shopping/pay/getBalance');
+  if (bal.ok && bal.data && Number(bal.data.amount) < est * 1.1) {
+    return { status: 'awaiting_balance', info: info, manual: manual, note: 'CJ balance ' + bal.data.amount + ' USD, needs about ' + round2_(est * 1.1) };
+  }
+  var failure = '', low = false, hold = false;
+  order.forEach(function (from, gi) {
+    if (info.cj[from] && info.cj[from].paid) return;
+    var g = groups[from];
+    var number = numberOf(from, gi);
+    var rec = info.cj[from] || { orderNumber: number };
+    if (!rec.orderId) {
+      /* live stock + price per line: CJ does not push price changes, and money leaves the wallet on create */
+      var goodsUsd = 0, problem = '';
+      g.products.forEach(function (p) {
+        if (problem) return;
+        var v = cjCall_('get', '/product/variant/queryByVid', null, { vid: p.vid, features: 'enable_inventory' });
+        if (!v.ok || !v.data) { problem = v.code === 1602002 || v.code === 1602003 ? 'variant_removed ' + p.vid : 'variant_check_failed ' + v.code; return; }
+        var stock = 0;
+        (v.data.inventories || []).forEach(function (inv) { if (String(inv.countryCode || from).toUpperCase() === from) stock += Number(inv.totalInventory) || 0; });
+        if ((v.data.inventories || []).length && stock < p.quantity) { problem = 'out_of_stock ' + p.vid; return; }
+        goodsUsd += (Number(v.data.variantSellPrice) || 0) * p.quantity;
+      });
+      /* a failed lookup is a network/CJ hiccup — retry it; a removed or sold-out variant needs the owner */
+      if (problem) { failure = problem; if (problem.indexOf('variant_check_failed') !== 0) hold = true; return; }
+      var fr = cjCall_('post', '/logistic/freightCalculate', { startCountryCode: from, endCountryCode: 'SA',
+        products: g.products.map(function (p) { return { vid: p.vid, quantity: p.quantity }; }) });
+      var opt = fr.ok ? cjPickLogistic_(fr.data, g.logistic) : null;
+      if (!opt) { failure = 'no_shipping_line' + (fr.ok ? '' : ' (cj ' + fr.code + ')'); return; }
+      /* never buy at a loss: CJ cost (goods + shipping) must stay under what the customer paid for these lines
+         (their share of the order after coupon, plus the shipping fee she paid) */
+      var sub = Number(o.subtotal) || 0;
+      var paidSar = sub > 0 ? g.revenueSar * ((Number(o.total) || 0) - (Number(o.codFee) || 0)) / sub : g.revenueSar;
+      var costSar = (goodsUsd + (Number(opt.logisticPrice) || 0)) * USD_SAR;
+      if (paidSar > 0 && costSar > paidSar && !opts.force) { failure = 'margin_guard cost ' + round2_(costSar) + ' SAR > paid ' + round2_(paidSar) + ' SAR'; hold = true; return; }
+      var body = Object.assign({ orderNumber: number, logisticName: opt.logisticName, fromCountryCode: from, payType: 2,
+        remark: 'Sora Fashion ' + o.orderId, products: g.products }, cjAddress_(o));
+      if (sandbox) body.isSandbox = 1;
+      var cr = cjCall_('post', '/shopping/order/createOrderV2', body);
+      if (!cr.ok && cr.code === 1603003) {
+        var ex = cjCall_('get', '/shopping/order/getOrderDetail', null, { orderId: number });
+        if (ex.ok && ex.data) cr = { ok: true, data: ex.data };
+      }
+      if (!cr.ok) {
+        if (cr.code === 1604000 || cr.code === 1604001) low = true;
+        else failure = 'cj ' + cr.code + ' ' + cr.message.slice(0, 120);
+        return;
+      }
+      rec = { orderNumber: number, orderId: String(cr.data.orderId || ''), logistic: opt.logisticName, days: String(opt.logisticAging || ''),
+        shipUsd: Number(opt.logisticPrice) || 0, amountUsd: Number(cr.data.orderAmount) || 0, status: String(cr.data.orderStatus || ''),
+        vids: g.products.map(function (p) { return p.vid; }) };
+      if (opts.force) rec.forced = now_();
+      var intercepts = (cr.data.interceptOrderReasons || []).filter(function (x) { return x && (x.code || x.message); });
+      if (intercepts.length) rec.intercept = intercepts.map(function (x) { return x.code + ' ' + (x.message || ''); }).join('; ').slice(0, 200);
+      info.cj[from] = rec;
+      saveCjProgress_(o.orderId, info.cj);
+    }
+    /* payType 2 should already have taken the money from the wallet — check, and pay now if not */
+    var d = cjCall_('get', '/shopping/order/getOrderDetail', null, { orderId: rec.orderId || number });
+    var status = d.ok && d.data ? String(d.data.orderStatus || '') : rec.status;
+    if (d.ok && d.data && d.data.orderId) rec.orderId = String(d.data.orderId);
+    if (!sandbox && ['CREATED', 'IN_CART', 'UNPAID'].indexOf(status) !== -1) {
+      var pay = cjPayExisting_(rec.orderId, status);
+      if (!pay.ok) {
+        if (pay.code === 1604000 || pay.code === 1604001) low = true;
+        else { failure = 'pay ' + pay.code + ' ' + String(pay.message || '').slice(0, 80) + (rec.intercept ? ' — CJ hold: ' + rec.intercept : ''); if (rec.intercept) hold = true; }
+        rec.status = status;
+        return;
+      }
+      status = 'UNSHIPPED';
+    }
+    rec.status = status;
+    rec.paid = sandbox || ['UNSHIPPED', 'SHIPPED', 'DELIVERED'].indexOf(status) !== -1;
+    if (!rec.paid && !failure) failure = 'cj order still ' + (status || 'unknown');
+  });
+  var done = order.every(function (k) { return info.cj[k] && info.cj[k].paid; });
+  return { status: done ? 'ordered' : (hold ? 'hold' : (low ? 'awaiting_balance' : 'failed')), info: info, manual: manual, error: done ? '' : failure };
+}
+
+/* Pays a CJ order that payType 2 left unpaid, using CJ's documented step flow. */
+function cjPayExisting_(cjOrderId, status) {
+  if (status === 'UNPAID') {
+    var direct = cjCall_('post', '/shopping/pay/payBalance', { orderId: cjOrderId });
+    if (direct.ok || direct.code === 1604000 || direct.code === 1604001) return direct;
+  }
+  if (status === 'CREATED') {
+    var add = cjCall_('post', '/shopping/order/addCart', { cjOrderIdList: [cjOrderId] });
+    if (!add.ok) return add;
+  }
+  var conf = cjCall_('post', '/shopping/order/addCartConfirm', { cjOrderIdList: [cjOrderId] });
+  if (!conf.ok) return conf;
+  var shipment = String((conf.data && conf.data.shipmentsId) || cjOrderId);
+  var parent = cjCall_('post', '/shopping/order/saveGenerateParentOrder', { shipmentOrderId: shipment });
+  if (!parent.ok) return parent;
+  var body = { shipmentOrderId: shipment };
+  if (parent.data && parent.data.payId) body.payId = String(parent.data.payId);
+  return cjCall_('post', '/shopping/pay/payBalanceV2', body);
+}
+
+function finishFulfil_(orderId, out) {
+  var lock = LockService.getScriptLock();
+  lock.waitLock(20000);
+  var ctx, info, mail = null;
+  try {
+    ctx = findOrder_(orderId);
+    var prev = parseJson_(ctx.order.supplierInfo) || {};
+    info = out.info || prev;
+    info.attempts = prev.attempts || info.attempts || 1;
+    info.mailed = prev.mailed || {};
+    if (prev.manualHandled) info.manualHandled = prev.manualHandled;
+    delete info.startedAt;
+    info.manual = out.manual || [];
+    if (out.error || out.note) info.lastError = out.error || out.note; else delete info.lastError;
+    /* consecutive real failures (a wallet wait is not a failure): back off 10 min, 20, 40 … up to 6 h */
+    info.fails = out.status === 'failed' ? (prev.fails || 0) + 1 : 0;
+    if (out.status === 'failed') info.nextTry = Date.now() + Math.min(6 * 3600000, 10 * 60000 * Math.pow(2, info.fails - 1));
+    else if (out.status === 'awaiting_balance') info.nextTry = Date.now() + 30 * 60000;
+    else delete info.nextTry;
+    var refs = Object.keys(info.cj || {}).map(function (k) { return info.cj[k].orderId; }).filter(String).join(', ');
+    var fields = { supplierStatus: out.status };
+    if (refs) fields.supplierRef = refs;
+    var st = String(ctx.order.status);
+    if (out.status === 'ordered' && (st === 'paid' || st === 'new')) fields.status = 'processing';
+    if (out.status === 'awaiting_balance' && !info.mailed.balance) { info.mailed.balance = now_(); mail = 'balance'; }
+    if (out.status === 'failed' && info.fails === 3) mail = 'failed';
+    if (out.status === 'failed' && info.fails === FAIL_CAP) mail = 'stopped';
+    if (out.status === 'hold' && info.mailed.hold !== info.lastError) { info.mailed.hold = info.lastError; mail = 'hold'; }
+    if (info.manual.length && !info.mailed.manual && !mail) { info.mailed.manual = now_(); mail = 'manual'; }
+    var cancelled = refs && (st === 'cancelled' || st === 'refunded') && !info.mailed.cancelled;
+    if (cancelled) info.mailed.cancelled = now_();
+    fields.supplierInfo = JSON.stringify(info);
+    writeFields_(ctx, fields);
+    var line = 'supplier: ' + out.status + (refs ? ' (CJ ' + refs + ')' : '') + (info.lastError ? ' — ' + info.lastError : '') +
+      (info.manual.length ? ' — ' + info.manual.length + ' line(s) not linked to CJ' : '');
+    /* a wallet wait repeats every 30 min: log it once, not 48 times a day */
+    if (!(out.status === 'awaiting_balance' && String(prev.lastLog || '') === line)) appendLog_(ctx, line);
+    info.lastLog = line;
+    writeFields_(ctx, { supplierInfo: JSON.stringify(info) });
+  } finally {
+    lock.releaseLock();
+  }
+  var manualText = info.manual.length ? ' | قطع تحتاج طلب يدوي: ' + info.manual.map(function (m) { return m.name + ' (' + m.color + ' / ' + m.size + ' × ' + m.qty + ')' + (m.url ? ' ← ' + m.url : ''); }).join('، ') : '';
+  if (mail === 'balance') notifyOwner_('رصيد CJ ما يكفي — الطلب ' + orderId + ' ينتظر', orderId,
+    'اشحن محفظة CJ (My CJ ← Wallet). الطلب ينرسل ويندفع تلقائياً أول ما يتوفر الرصيد — ما يحتاج تسوي شي ثاني. ' + (info.lastError || '') + manualText);
+  if (mail === 'failed') notifyOwner_('تعذّر إرسال الطلب ' + orderId + ' إلى CJ', orderId,
+    'فشل ' + info.fails + ' مرات ورا بعض. السبب: ' + (info.lastError || 'غير معروف') + '. النظام يعيد المحاولة تلقائياً (لين ' + FAIL_CAP + ' مرات)، ولو استمر افتح لوحة التحكم ← الطلبات ← «إرسال لـ CJ الآن».' + manualText);
+  if (mail === 'stopped') notifyOwner_('توقفت المحاولات التلقائية للطلب ' + orderId, orderId,
+    'فشل الإرسال لـ CJ ' + FAIL_CAP + ' مرات ورا بعض، والنظام وقّف المحاولة. السبب الأخير: ' + (info.lastError || 'غير معروف') + '. اضغط «إرسال لـ CJ الآن» من لوحة التحكم بعد ما تتأكد، أو استرجع المبلغ للعميلة.' + manualText);
+  if (mail === 'hold') {
+    var why = String(info.lastError || '');
+    notifyOwner_('الطلب ' + orderId + ' موقوف ويحتاج قرارك', orderId, 'ما انطلب من CJ لأن: ' + why + '. ' +
+      (/^margin_guard/.test(why) ? 'تكلفة CJ صارت أعلى من المبلغ اللي دفعته العميلة. إما تسترجع لها من لوحة ميسّر، أو تضغط «اشترِ رغم الخسارة» من لوحة التحكم.'
+        : /^out_of_stock|^variant_removed/.test(why) ? 'القطعة خلصت أو انشالت عند CJ. استرجع للعميلة من لوحة ميسّر أو تواصل معها لبديل.'
+          : 'راجع الطلب في لوحة التحكم.') + manualText);
+  }
+  if (mail === 'manual') notifyOwner_('قطع في الطلب ' + orderId + ' تحتاج طلب يدوي', orderId,
+    info.manual.map(function (m) { return m.name + ' (' + m.color + ' / ' + m.size + ' × ' + m.qty + ')' + (m.url ? ' ← ' + m.url : ''); }).join(' | ') +
+    ' — هذي القطع مو مربوطة بـ CJ، فاطلبها من رابط المورد بعنوان العميلة، وبعدها اضغط «تم الطلب اليدوي» في لوحة التحكم.');
+  if (cancelled) notifyOwner_('انطلب من CJ لطلب ملغي ' + orderId, orderId,
+    'الطلب انلغى أو انسترجع في المتجر، لكن فيه طلب CJ (' + refs + '). ألغه من My CJ ← Orders (أو افتح نزاع) عشان يرجع المبلغ لرصيدك.');
+  return { ok: out.status === 'ordered', supplierStatus: out.status, supplierRef: String((ctx && ctx.order.supplierRef) || ''), error: info.lastError || '' };
+}
+
+/* Time trigger (every 5 min, see installTriggers): send queued orders to CJ, retry, and pull tracking. */
+function processSupplierQueue() {
+  if (!prop_('CJ_API_KEY')) return;
+  var started = Date.now();
+  var all = readAll_(sheet_(SHEET_ORDERS, ORDER_HEADERS));
+  var todo = [], open = [];
+  var cutoff = Utilities.formatDate(new Date(Date.now() - 60 * 86400000), TZ, "yyyy-MM-dd'T'HH:mm:ss");
+  all.rows.forEach(function (r) {
+    var o = toObj_(all.headers, r, 0);
+    var st = String(o.status), ss = String(o.supplierStatus || ''), info = parseJson_(o.supplierInfo) || {};
+    var due = !info.nextTry || Date.now() >= info.nextTry;
+    /* a COD order joins the queue only after the owner sent it once (its supplierStatus is then set) */
+    var live = st === 'paid' || st === 'processing' || (st === 'new' && String(o.payment) === 'cod' && ss !== '');
+    if (live && due) {
+      if (ss === 'queued' || ss === 'awaiting_balance' || (ss === 'failed' && (info.fails || 0) < FAIL_CAP)) todo.push([String(o.orderId), 'queue']);
+      if (ss === 'ordering' && Date.now() - (info.startedAt || 0) > 15 * 60000) todo.push([String(o.orderId), 'reconcile']);
+    }
+    /* tracking changes slowly (and trigger time is capped at 90 min/day on a free Google account):
+       before shipping every 3 h, in transit every 12 h, and not at all after 60 days */
+    var every = ss === 'shipped' ? 12 * 3600000 : 3 * 3600000;
+    if ((ss === 'ordered' || ss === 'shipped') && ['delivered', 'cancelled', 'refunded'].indexOf(st) === -1 &&
+        String(o.createdAt) >= cutoff && Date.now() - (info.lastSync || 0) > every) open.push(o);
+  });
+  todo.slice(0, 8).forEach(function (t) {
+    if (Date.now() - started > 200000) return;
+    try { fulfillOrder_(t[0], t[1]); } catch (err) { console.error('queue ' + t[0], err); }
+  });
+  open.slice(0, 40).forEach(function (o) {
+    if (Date.now() - started > 280000) return;
+    try { syncCjOrder_(String(o.orderId), o); } catch (err) { console.error('sync ' + o.orderId, err); }
+  });
+}
+
+/* CJ status → store status + tracking number (the Saudi last-mile number when CJ has it).
+   `snap` is the row the queue already read, so the sheet is not read twice per order. */
+function syncCjOrder_(orderId, snap) {
+  var order = snap;
+  if (!order) { var c0 = findOrder_(orderId); if (!c0) return; order = c0.order; }
+  var ctx = { order: order };
+  var info = parseJson_(ctx.order.supplierInfo) || {};
+  var parts = Object.keys(info.cj || {});
+  if (!parts.length) return;
+  var shipped = 0, delivered = 0, cancelled = 0, numbers = [], carriers = [], url = '';
+  parts.forEach(function (k) {
+    var rec = info.cj[k];
+    var d = cjCall_('get', '/shopping/order/getOrderDetail', null, { orderId: rec.orderId || rec.orderNumber });
+    if (!d.ok || !d.data) return;
+    rec.status = String(d.data.orderStatus || rec.status || '');
+    if (d.data.trackNumber) {
+      rec.trackNumber = String(d.data.trackNumber);
+      rec.carrier = String(d.data.trackingProvider || d.data.logisticName || rec.logistic || '');
+      rec.trackingUrl = String(d.data.trackingUrl || '');
+      if (!rec.lastMile) {
+        var t = cjCall_('get', '/logistic/trackInfo', null, { trackNumber: rec.trackNumber });
+        var row = t.ok && Array.isArray(t.data) ? t.data[0] : null;
+        if (row && row.lastTrackNumber && String(row.lastTrackNumber) !== rec.trackNumber) rec.lastMile = { no: String(row.lastTrackNumber), carrier: String(row.lastMileCarrier || '') };
+      }
+    }
+    if (rec.status === 'SHIPPED' || rec.status === 'DELIVERED') shipped++;
+    if (rec.status === 'DELIVERED') delivered++;
+    if (rec.status === 'CANCELLED') cancelled++;
+    var no = rec.lastMile ? rec.lastMile.no : rec.trackNumber;
+    if (no) {
+      numbers.push(no);
+      carriers.push(rec.lastMile && rec.lastMile.carrier ? rec.lastMile.carrier : rec.carrier);
+      url = url || (rec.lastMile ? 'https://t.17track.net/ar#nums=' + encodeURIComponent(no) : rec.trackingUrl);
+    }
+  });
+  info.lastSync = Date.now();
+  var fields = {}, st = String(ctx.order.status);
+  var supplierStatus = delivered === parts.length ? 'delivered' : (shipped === parts.length ? 'shipped' : String(ctx.order.supplierStatus));
+  if (numbers.length && numbers.join(', ') !== String(ctx.order.trackingNo || '')) {
+    fields.trackingNo = numbers.join(', ');
+    fields.carrier = carriers.filter(String).join(', ');
+    fields.trackingUrl = /^https:\/\//.test(url) ? url : '';
+  }
+  var cancelMail = false;
+  if (cancelled) {
+    /* a cancelled CJ order no longer covers its lines: move it aside and bump the order-number suffix,
+       so "send to CJ" places a fresh order instead of reporting the dead one as paid */
+    info.cancelled = info.cancelled || {};
+    info.seq = info.seq || {};
+    parts.forEach(function (k) {
+      if (info.cj[k] && info.cj[k].status === 'CANCELLED') {
+        info.cancelled[k + '#' + ((info.seq[k] || 0) + 1)] = info.cj[k];
+        delete info.cj[k];
+        info.seq[k] = (info.seq[k] || 0) + 1;
+      }
+    });
+    supplierStatus = 'hold';
+    info.lastError = 'CJ cancelled ' + cancelled + ' part(s) of this order';
+    info.mailed = info.mailed || {};
+    if (info.mailed.hold !== info.lastError) { info.mailed.hold = info.lastError; cancelMail = true; }
+    fields.supplierRef = Object.keys(info.cj).map(function (k) { return info.cj[k].orderId; }).filter(String).join(', ');
+  }
+  if (supplierStatus !== String(ctx.order.supplierStatus)) fields.supplierStatus = supplierStatus;
+  if (supplierStatus === 'shipped' && (st === 'paid' || st === 'processing' || st === 'new')) fields.status = 'shipped';
+  if (supplierStatus === 'delivered' && st !== 'delivered' && st !== 'refunded') fields.status = 'delivered';
+  fields.supplierInfo = JSON.stringify(info);
+  var lock = LockService.getScriptLock();
+  lock.waitLock(20000);
+  try {
+    var fresh = findOrder_(orderId);
+    if (!fresh) return;
+    /* the order may have changed since the snapshot (owner edit, a payment): only touch an order that is still ours to sync */
+    if (String(fresh.order.supplierStatus || '') !== String(ctx.order.supplierStatus || '')) return;
+    writeFields_(fresh, fields);
+    if (fields.trackingNo || fields.status || cancelMail) appendLog_(fresh, 'CJ sync: ' + (fields.status || fresh.order.status) + (fields.trackingNo ? ' tracking ' + fields.trackingNo : '') + (cancelMail ? ' — ' + info.lastError : ''));
+  } finally {
+    lock.releaseLock();
+  }
+  if (cancelMail) notifyOwner_('CJ ألغت جزء من الطلب ' + orderId, orderId,
+    'CJ ألغت الطلب عندها (غالباً نفد المخزون) والمبلغ يرجع لرصيدك في CJ. إما تضغط «إرسال لـ CJ الآن» لطلب جديد (لو رجع متوفر)، أو تسترجع للعميلة من لوحة ميسّر.');
+}
+
+/* Daily trigger: CJ revokes API access after 30 days without a transaction, and an empty wallet stops orders. */
+function cjDailyCheck() {
+  if (!prop_('CJ_API_KEY')) return null;
+  var problems = [];
+  var s = cjCall_('get', '/setting/get');
+  if (!s.ok) problems.push('الاتصال مع CJ فشل (' + s.code + ' ' + s.message + '). تأكد من مفتاح API في إعدادات السكربت.');
+  else if (s.data && s.data.root === 'NO_PERMISSION') problems.push('صلاحية API في CJ موقوفة (يصير هذا بعد 30 يوم بدون أي عملية). فعّلها من cjdropshipping.com/my.html#/authorize/APIStores');
+  var b = cjCall_('get', '/shopping/pay/getBalance');
+  var min = Number(prop_('CJ_MIN_BALANCE_USD') || 25);
+  if (b.ok && b.data && Number(b.data.amount) < min) problems.push('رصيد محفظة CJ ' + b.data.amount + '$ — أقل من ' + min + '$. اشحنه من My CJ ← Wallet عشان تمشي الطلبات تلقائي.');
+  if (problems.length) mailOwnerText_('تنبيه CJ', problems);
+  return { ok: !problems.length, problems: problems };
+}
+
+function cjStatus_() {
+  if (!prop_('CJ_API_KEY')) return { ok: true, configured: false };
+  var s = cjCall_('get', '/setting/get');
+  var b = cjCall_('get', '/shopping/pay/getBalance');
+  return { ok: true, configured: true, sandbox: prop_('CJ_SANDBOX') === '1', connected: s.ok, root: s.ok && s.data ? String(s.data.root || '') : '',
+    error: s.ok ? '' : String(s.code + ' ' + s.message), balanceUsd: b.ok && b.data ? Number(b.data.amount) : null, logistics: prop_('CJ_LOGISTICS') };
+}
+
+/* admin product search (50 CJ points per call) */
+function cjSearch_(b) {
+  var r = cjCall_('get', '/product/listV2', null, { keyWord: str_(b.keyword, 80), page: Math.max(1, Math.min(50, Number(b.page) || 1)), size: 20 });
+  if (!r.ok) fail_('cj_' + r.code);
+  var content = (r.data && r.data.content) || [];
+  var list = [];
+  content.forEach(function (c) { (c.productList || []).forEach(function (p) { list.push({ pid: String(p.id), name: String(p.nameEn || ''), image: String(p.bigImage || ''), priceUsd: String(p.sellPrice || ''), listed: Number(p.listedNum) || 0, stock: Number(p.warehouseInventoryNum) || 0 }); }); });
+  return { ok: true, total: r.data ? Number(r.data.totalRecords) || list.length : list.length, list: list };
+}
+
+/* admin product detail + Saudi shipping quote (≈20 CJ points) — the admin panel turns it into a product */
+function cjProduct_(b) {
+  var pid = str_(b.pid, 60);
+  if (!pid) fail_('pid_required');
+  var r = cjCall_('get', '/product/query', null, { pid: pid });
+  if (!r.ok || !r.data) fail_('cj_' + (r.code || 'not_found'));
+  var p = r.data;
+  var imgs = [];
+  try { imgs = Array.isArray(p.productImageSet) ? p.productImageSet : JSON.parse(p.productImageSet || '[]'); } catch (e) { imgs = []; }
+  if (p.bigImage && imgs.indexOf(p.bigImage) === -1) imgs.unshift(p.bigImage);
+  var variants = (p.variants || []).map(function (v) {
+    return { vid: String(v.vid), key: String(v.variantKey || ''), name: String(v.variantNameEn || ''), image: String(v.variantImage || ''), priceUsd: Number(v.variantSellPrice) || 0 };
+  });
+  var shipping = [];
+  if (variants.length) {
+    var fr = cjCall_('post', '/logistic/freightCalculate', { startCountryCode: 'CN', endCountryCode: 'SA', products: [{ vid: variants[0].vid, quantity: 1 }] });
+    if (fr.ok && Array.isArray(fr.data)) shipping = fr.data.map(function (x) { return { name: String(x.logisticName), usd: Number(x.logisticPrice) || 0, days: String(x.logisticAging || '') }; });
+  }
+  return { ok: true, product: { pid: String(p.pid || pid), name: String(p.productNameEn || ''), sku: String(p.productSku || ''), images: imgs.slice(0, 10),
+    optionNames: String(p.productKeyEn || ''), weight: Number(p.productWeight) || 0, variants: variants, shipping: shipping } };
+}
+
+/* Ask CJ's agents to find products that are linked to another supplier (e.g. an AliExpress URL).
+   The supplier row's ref becomes "sourcing:<id>" until CJ answers (usually 1-2 days). */
+function cjSourcingCreate_(b) {
+  var ids = (Array.isArray(b.productIds) ? b.productIds : []).map(String).slice(0, 40);
+  var store = fetchStore_(true), sup = getSuppliers_().map, updates = {}, out = [];
+  ids.forEach(function (id) {
+    var p = store.products.filter(function (x) { return String(x.id) === id; })[0];
+    var s = sup[id];
+    if (!p || !s || !s.url || /^cj/i.test(s.supplier || '') || /^sourcing:/.test(s.ref || '')) { out.push({ id: id, skipped: true }); return; }
+    var title = String(s.notes || '').split('|')[0].trim() || p.name;
+    var r = cjCall_('post', '/product/sourcing/create', {
+      productName: title.slice(0, 200), productImage: String((p.images || [])[0] || '').slice(0, 200), productUrl: s.url.slice(0, 200),
+      price: s.cost ? round2_(s.cost / USD_SAR) : undefined, remark: ('Sora Fashion product ' + id + ' — same item, colours: ' + (p.colors || []).map(function (c) { return c.name; }).join('/')).slice(0, 200),
+      acceptSimilar: 0,
+    });
+    if (r.ok && r.data && r.data.cjSourcingId) {
+      updates[id] = Object.assign({}, s, { ref: 'sourcing:' + r.data.cjSourcingId });
+      out.push({ id: id, sourcingId: String(r.data.cjSourcingId) });
+    } else out.push({ id: id, error: 'cj_' + r.code + ' ' + r.message });
+  });
+  if (Object.keys(updates).length) setSuppliers_({ map: updates });
+  return { ok: true, results: out };
+}
+
+/* "sourcing:<id>" → "found:<CJ product id>" (admin then links colours/sizes) or "sourcing-failed:<reason>" */
+function cjSourcingStatus_() {
+  var sup = getSuppliers_().map, byId = {};
+  Object.keys(sup).forEach(function (pid) { var m = /^sourcing:(.+)$/.exec(sup[pid].ref || ''); if (m) byId[m[1]] = pid; });
+  var ids = Object.keys(byId), updates = {}, out = [];
+  for (var i = 0; i < ids.length; i += 100) {
+    var r = cjCall_('get', '/product/sourcing/queryList', null, { sourceIds: ids.slice(i, i + 100) });
+    (r.ok && Array.isArray(r.data) ? r.data : []).forEach(function (x) {
+      var pid = byId[String(x.sourceId)];
+      if (!pid) return;
+      var st = String(x.sourceStatus || '');
+      if (st === '3' && (x.cjProductId || x.productId)) updates[pid] = Object.assign({}, sup[pid], { ref: 'found:' + (x.cjProductId || x.productId) });
+      else if (st === '5') updates[pid] = Object.assign({}, sup[pid], { ref: 'sourcing-failed:' + str_(x.failReasonStr || x.failReason || 'not found', 80) });
+      out.push({ productId: pid, status: st, text: String(x.sourceStatusStr || ''), cjProductId: String(x.cjProductId || '') });
+    });
+  }
+  if (Object.keys(updates).length) setSuppliers_({ map: updates });
+  return { ok: true, pending: ids.length, results: out, map: getSuppliers_().map };
+}
+
+/* Run once from the editor after adding CJ_API_KEY (Run → installTriggers). */
+function installTriggers() {
+  var mine = ['processSupplierQueue', 'cjDailyCheck', 'cleanupStaleOrders'];
+  ScriptApp.getProjectTriggers().forEach(function (t) { if (mine.indexOf(t.getHandlerFunction()) !== -1) ScriptApp.deleteTrigger(t); });
+  ScriptApp.newTrigger('processSupplierQueue').timeBased().everyMinutes(5).create();
+  ScriptApp.newTrigger('cjDailyCheck').timeBased().everyDays(1).atHour(9).create();
+  ScriptApp.newTrigger('cleanupStaleOrders').timeBased().everyDays(1).atHour(4).create();
+  console.log('Triggers installed: supplier queue every 5 min, CJ check daily 9:00, stale-order cleanup daily 4:00.');
+}
+
 /* ───────────── email ───────────── */
+
+function mailOwnerText_(subject, lines) {
+  var to = prop_('OWNER_EMAIL');
+  if (!to) return;
+  try {
+    MailApp.sendEmail({ to: to, subject: 'Sora Fashion — ' + subject,
+      htmlBody: '<div dir="rtl" style="font-family:Tahoma,Arial"><h2>' + esc_(subject) + '</h2><ul>' + lines.map(function (l) { return '<li>' + esc_(l) + '</li>'; }).join('') + '</ul></div>' });
+  } catch (err) {
+    console.error('mail failed', err);
+  }
+}
 
 function notifyOwner_(subject, orderId, extra) {
   var to = prop_('OWNER_EMAIL');
@@ -562,7 +1237,8 @@ function notifyOwner_(subject, orderId, extra) {
       (o.nationalAddress ? ' (العنوان الوطني ' + esc_(o.nationalAddress) + ')' : '') + '</p>' +
       '<table border="1" cellpadding="6" style="border-collapse:collapse"><tr><th>القطعة</th><th>اللون</th><th>المقاس</th><th>الكمية</th><th>المبلغ</th></tr>' + rows + '</table>' +
       '<p><b>الإجمالي:</b> ' + o.total + ' ر.س (' + (o.payment === 'cod' ? 'دفع عند الاستلام' : 'أونلاين') + ')</p>' +
-      '<p>افتحي لوحة التحكم لطلب القطع من المورد.</p></div>';
+      (prop_('CJ_API_KEY') ? '<p>القطع المربوطة بـ CJ تنطلب وتندفع من رصيد CJ تلقائياً، ورقم التتبّع يوصل للعميلة بنفسه. حالة الطلب في لوحة التحكم ← الطلبات.</p>'
+        : '<p>افتح لوحة التحكم لطلب القطع من المورد.</p>') + '</div>';
     MailApp.sendEmail({ to: to, subject: 'Sora Fashion — ' + subject, htmlBody: html });
   } catch (err) {
     console.error('notify failed', err);
@@ -624,7 +1300,12 @@ function setupCheck() {
     MOYASAR_SECRET_KEY: prop_('MOYASAR_SECRET_KEY') ? 'set' : '(optional) not set — online payment disabled',
     MOYASAR_WEBHOOK_SECRET: prop_('MOYASAR_WEBHOOK_SECRET') ? 'set' : '(optional) not set',
     TURNSTILE_SECRET: prop_('TURNSTILE_SECRET') ? 'set — anti-bot check on' : '(optional) not set',
+    CJ_API_KEY: prop_('CJ_API_KEY') ? 'set' : '(optional) not set — orders are not sent to CJ automatically',
   };
+  if (prop_('CJ_API_KEY')) {
+    try { var cj = cjStatus_(); report.CJ = cj.connected ? 'connected, balance ' + cj.balanceUsd + ' USD' + (cj.sandbox ? ' (SANDBOX)' : '') : 'NOT connected: ' + cj.error; } catch (e) { report.CJ = 'FAILED: ' + e.message; }
+    report.triggers = ScriptApp.getProjectTriggers().map(function (t) { return t.getHandlerFunction(); }).join(', ') || 'none — run installTriggers';
+  }
   try { var s = fetchStore_(true); report.products = s.products.length + ' products loaded from SITE_URL'; } catch (e) { report.products = 'FAILED: ' + e.message; }
   console.log(JSON.stringify(report, null, 2));
   return report;

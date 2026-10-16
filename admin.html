@@ -49,6 +49,14 @@
   .items th { color: var(--muted); font-weight: 600; font-size: .78rem; }
   .sup-link { color: var(--plum); font-weight: 700; white-space: nowrap; }
   .sup-missing { color: var(--err); font-size: .78rem; }
+  .sup-strip { display: flex; gap: .4rem .9rem; align-items: center; flex-wrap: wrap; padding: .6rem 1.2rem; border-bottom: 1px solid var(--line); font-size: .86rem; }
+  .sup-strip.ok { background: #eef7f1; } .sup-strip.info { background: #eef3fb; } .sup-strip.warn { background: #fff7e3; } .sup-strip.err { background: #fdeeed; }
+  .sup-strip .btn { margin-inline-start: auto; }
+  .cj-results { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: .8rem; margin-top: 1rem; max-height: 60vh; overflow: auto; }
+  .cj-item { border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: #fff; display: flex; flex-direction: column; font-size: .8rem; }
+  .cj-item img { width: 100%; aspect-ratio: 3/4; object-fit: cover; background: #f3efe9; }
+  .cj-item div { padding: .5rem; display: flex; flex-direction: column; gap: .3rem; flex: 1; }
+  .cj-item button { margin-top: auto; }
   .profit { display: flex; gap: 1rem; flex-wrap: wrap; margin-top: .6rem; font-size: .86rem; }
   .profit b.pos { color: var(--ok); } .profit b.neg { color: var(--err); }
   .order-actions { display: grid; grid-template-columns: repeat(4, 1fr) auto; gap: .6rem; padding: .9rem 1.2rem; border-top: 1px solid var(--line); background: #fcfaf7; align-items: end; }

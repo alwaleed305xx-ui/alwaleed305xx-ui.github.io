@@ -11,7 +11,7 @@ Sora.ready(() => {
 
   /* hero */
   $('#heroPerks').innerHTML = [
-    [I.truck, `توصيل لكل المدن خلال ${esc(cfg.shippingDays)} يوم`],
+    [I.truck, `توصيل لكل المدن خلال ${esc(S.shipRange())} يوم`],
     [I.shield, 'دفع آمن: مدى · أبل باي'],
     [I.swap, `استبدال خلال ${esc(cfg.returnsDays)} أيام`],
   ].map(([i, t]) => `<span>${i}${t}</span>`).join('');
@@ -27,12 +27,12 @@ Sora.ready(() => {
     ['set', '#7f8f74', 'رياضي', 'sport'],
   ].map(([t, c, label, cat]) => {
     const ph = photoOf(cat);
-    return `<a class="arch${ph ? ' has-photo' : ''}" href="index.html?cat=${cat}#catalog">${ph ? S.imgTag(ph.p, ph.src, '', { eager: true }) : Garment.svg(t, c)}<span class="arch-tag">${label}</span></a>`;
+    return `<a class="arch${ph ? ' has-photo' : ''}" href="index.html?cat=${cat}#catalog">${ph ? S.imgTag(ph.p, ph.src, '', { eager: true, w: 600 }) : Garment.svg(t, c)}<span class="arch-tag">${label}</span></a>`;
   }).join('');
 
   /* trust */
   $('#trust').innerHTML = [
-    [I.truck, 'توصيل لكل المملكة', `خلال ${esc(cfg.shippingDays)} يوم`],
+    [I.truck, 'توصيل لكل المملكة', `خلال ${esc(S.shipRange())} يوم`],
     [I.shield, 'دفع آمن 100%', 'مدى · Apple Pay · بطاقات'],
     [I.swap, 'استبدال سهل', `خلال ${esc(cfg.returnsDays)} أيام من الاستلام`],
     [I.ruler, 'مقاسات واضحة', 'جدول مقاسات لكل قطعة'],
@@ -43,7 +43,7 @@ Sora.ready(() => {
   S.products.forEach(p => { counts[p.cat] = (counts[p.cat] || 0) + 1; });
   $('#catRail').innerHTML = S.cats.filter(c => counts[c.id]).map(c => `
     <a class="cat-tile reveal" href="index.html?cat=${esc(c.id)}#catalog" data-cat="${esc(c.id)}">
-      <span class="cat-art${photoOf(c.id) ? ' has-photo' : ''}">${photoOf(c.id) ? S.imgTag(photoOf(c.id).p, photoOf(c.id).src, '') : Garment.svg(c.type, c.hex, { accent: c.accent })}</span>
+      <span class="cat-art${photoOf(c.id) ? ' has-photo' : ''}">${photoOf(c.id) ? S.imgTag(photoOf(c.id).p, photoOf(c.id).src, '', { w: 400 }) : Garment.svg(c.type, c.hex, { accent: c.accent })}</span>
       <b>${esc(c.name)}</b><small>${counts[c.id]} قطعة</small>
     </a>`).join('');
 
@@ -63,7 +63,7 @@ Sora.ready(() => {
   }
   const promoPics = ['evening', 'kaftan'].map(photoOf).filter(Boolean);
   $('#promoArt').innerHTML = promoPics.length === 2
-    ? promoPics.map(ph => `<span class="promo-photo">${S.imgTag(ph.p, ph.src, '')}</span>`).join('')
+    ? promoPics.map(ph => `<span class="promo-photo">${S.imgTag(ph.p, ph.src, '', { w: 600 })}</span>`).join('')
     : Garment.svg('gown', '#5e2b48') + Garment.svg('kaftan', '#efe8dc', { accent: '#a9874f' });
   $('#copyCode').addEventListener('click', () => {
     const code = $('#promoCode').firstChild.textContent.trim();
@@ -134,7 +134,7 @@ Sora.ready(() => {
 
   /* faq */
   const faq = [
-    ['كم يأخذ التوصيل؟', `نجهّز طلبك ونشحنه خلال 1-3 أيام، ويوصلك خلال ${esc(cfg.shippingDays)} يوم لكل مدن المملكة. يوصلك رقم تتبّع، وتقدرين تتابعين طلبك من صفحة «تتبّع طلبك».`],
+    ['كم يأخذ التوصيل؟', `نجهّز طلبك ونشحنه خلال 1-3 أيام، ويوصلك خلال ${esc(S.shipRange())} يوم لكل مدن المملكة حسب القطعة (المدة مكتوبة في صفحة كل قطعة). يوصلك رقم تتبّع، وتقدرين تتابعين طلبك من صفحة «تتبّع طلبك».`],
     ['وش طرق الدفع؟', `مدى، Apple Pay، فيزا وماستركارد عبر بوابة دفع سعودية آمنة${cfg.codEnabled ? '، والدفع عند الاستلام برسوم ' + esc(cfg.codFee) + ' ر.س' : ''}.`],
     ['كيف أعرف مقاسي؟', 'كل قطعة فيها «دليل المقاسات» بالسنتيمتر. للعبايات والإسدال المقاس هو الطول (52 إلى 60). وإذا احترتي بين مقاسين اختاري الأكبر.'],
     ['أقدر أستبدل أو أرجّع؟', `إيه، خلال ${esc(cfg.returnsDays)} أيام من الاستلام إذا القطعة بحالتها الأصلية مع البطاقة. التفاصيل في سياسة الاستبدال والاسترجاع.`],

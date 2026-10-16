@@ -22,11 +22,13 @@
         <h2><span class="step">1</span> بيانات التوصيل</h2>
         <div class="form-grid">
           <div class="field full"><label for="fName">الاسم الكامل</label><input class="input" id="fName" name="name" autocomplete="name" required maxlength="60"><span class="err" data-err="name"></span></div>
+          <div class="field full"><label for="fNameEn">الاسم بالإنجليزي <span class="opt">(يُكتب على ملصق الشحنة)</span></label><input class="input" id="fNameEn" name="nameEn" dir="ltr" placeholder="Sara Alqahtani" autocapitalize="words" required maxlength="50"><span class="err" data-err="nameEn"></span></div>
           <div class="field"><label for="fPhone">رقم الجوال</label><input class="input" id="fPhone" name="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="05XXXXXXXX" dir="ltr" required maxlength="16"><span class="err" data-err="phone"></span></div>
           <div class="field"><label for="fCity">المدينة</label><select class="select" id="fCity" name="city" required></select><span class="err" data-err="city"></span></div>
           <div class="field" id="cityOtherWrap" hidden><label for="fCityOther">اسم المدينة</label><input class="input" id="fCityOther" maxlength="40"></div>
+          <div class="field" id="regionWrap" hidden><label for="fRegion">المنطقة</label><select class="select" id="fRegion" name="region"></select><span class="err" data-err="region"></span></div>
           <div class="field"><label for="fDistrict">الحي</label><input class="input" id="fDistrict" name="district" required maxlength="60"><span class="err" data-err="district"></span></div>
-          <div class="field"><label for="fNational">العنوان الوطني المختصر <span class="opt">(يسرّع التوصيل — من تطبيق سبل)</span></label><input class="input" id="fNational" name="nationalAddress" placeholder="مثال: RAAA1234" dir="ltr" maxlength="8" autocapitalize="characters"><span class="err" data-err="nationalAddress"></span></div>
+          <div class="field"><label for="fNational">العنوان الوطني المختصر <span class="opt">(مطلوب للتوصيل — من تطبيق سبل أو «توكلنا»)</span></label><input class="input" id="fNational" name="nationalAddress" placeholder="مثال: RAAA1234" dir="ltr" maxlength="8" autocapitalize="characters" required><span class="err" data-err="nationalAddress"></span></div>
           <div class="field full"><label for="fAddress">العنوان (الشارع، رقم المبنى، أقرب معلم)</label><input class="input" id="fAddress" name="address" autocomplete="street-address" required maxlength="200"><span class="err" data-err="address"></span></div>
           <div class="field full"><label for="fNotes">ملاحظات <span class="opt">(اختياري)</span></label><input class="input" id="fNotes" name="notes" maxlength="300"></div>
           <input type="text" name="website" id="fWebsite" tabindex="-1" autocomplete="off" class="sr-only" aria-hidden="true">

@@ -6,11 +6,17 @@ Sora.ready(() => {
   const CITIES = ['الرياض', 'جدة', 'مكة المكرمة', 'المدينة المنورة', 'الدمام', 'الخبر', 'الظهران', 'الأحساء', 'القطيف', 'الجبيل',
     'الطائف', 'تبوك', 'بريدة', 'عنيزة', 'الرس', 'حائل', 'أبها', 'خميس مشيط', 'بيشة', 'جازان', 'نجران', 'ينبع', 'الباحة',
     'سكاكا', 'عرعر', 'القريات', 'حفر الباطن', 'الخرج', 'المجمعة', 'القنفذة', 'أخرى'];
+  /* only asked for when the city is not in the list — the supplier's shipping label needs the region */
+  const REGIONS = [['Riyadh', 'منطقة الرياض'], ['Makkah', 'منطقة مكة المكرمة'], ['Madinah', 'منطقة المدينة المنورة'], ['Eastern Province', 'المنطقة الشرقية'],
+    ['Al Qassim', 'منطقة القصيم'], ['Asir', 'منطقة عسير'], ['Tabuk', 'منطقة تبوك'], ['Hail', 'منطقة حائل'], ['Northern Borders', 'منطقة الحدود الشمالية'],
+    ['Jazan', 'منطقة جازان'], ['Najran', 'منطقة نجران'], ['Al Bahah', 'منطقة الباحة'], ['Al Jawf', 'منطقة الجوف']];
   const ERR = {
     name_invalid: 'اكتبي الاسم الكامل (3 أحرف على الأقل).',
     phone_invalid: 'رقم الجوال لازم يكون سعودي مثل 05XXXXXXXX.',
-    city_invalid: 'اختاري المدينة.', district_invalid: 'اكتبي اسم الحي.', address_invalid: 'اكتبي العنوان بالتفصيل.',
+    city_invalid: 'اختاري المدينة.', region_invalid: 'اختاري المنطقة.', district_invalid: 'اكتبي اسم الحي.', address_invalid: 'اكتبي العنوان بالتفصيل.',
     national_address_invalid: 'العنوان الوطني المختصر 4 حروف و4 أرقام، مثل RAAA1234.',
+    national_address_required: 'اكتبي العنوان الوطني المختصر (4 حروف و4 أرقام) — تلقينه في تطبيق سبل أو توكلنا، وشركات الشحن ما تسلّم بدونه.',
+    name_en_invalid: 'اكتبي اسمك بالحروف الإنجليزية (مثل Sara Alqahtani) عشان يطلع صح على ملصق الشحنة.',
     too_many_orders: 'وصلنا طلبات كثيرة من نفس الرقم — جربي بعد ساعة أو تواصلي معنا.',
     product_unavailable: 'قطعة في سلتك ما عادت متوفرة — حدّثي السلة.', color_invalid: 'لون قطعة في سلتك ما عاد متوفر — حدّثي السلة.',
     size_invalid: 'مقاس قطعة في سلتك ما عاد متوفر — حدّثي السلة.', qty_invalid: 'الكمية لازم تكون من 1 إلى 10.',
@@ -52,17 +58,18 @@ Sora.ready(() => {
     ].filter(Boolean).join('');
   if (!payment || !backend) $('#placeBtn').disabled = true;
   $('#secureLine').innerHTML = `${I.lock} بياناتك محمية — ما نحفظ بيانات البطاقة`;
-  $('#agreeDays').textContent = cfg.shippingDays;
+  $('#agreeDays').textContent = S.shipWindow(lines);
   $('#payOptions').addEventListener('change', e => { if (e.target.name === 'pay') { payment = e.target.value; renderSummary(); } });
 
   /* cities */
   $('#fCity').innerHTML = '<option value="">اختاري المدينة</option>' + CITIES.map(c => `<option>${c}</option>`).join('');
-  $('#fCity').addEventListener('change', e => { $('#cityOtherWrap').hidden = e.target.value !== 'أخرى'; });
+  $('#fRegion').innerHTML = '<option value="">اختاري المنطقة</option>' + REGIONS.map(([v, t]) => `<option value="${v}">${t}</option>`).join('');
+  $('#fCity').addEventListener('change', e => { const other = e.target.value === 'أخرى'; $('#cityOtherWrap').hidden = !other; $('#regionWrap').hidden = !other; });
 
   /* restore details typed earlier in this session */
   const saved = (() => { try { return JSON.parse(sessionStorage.getItem('sora-co') || '{}'); } catch (e) { return {}; } })();
-  ['name', 'phone', 'district', 'address', 'nationalAddress', 'notes'].forEach(k => { const el = $(`#coForm [name="${k}"]`); if (el && saved[k]) el.value = saved[k]; });
-  if (saved.city) { $('#fCity').value = CITIES.includes(saved.city) ? saved.city : 'أخرى'; if ($('#fCity').value === 'أخرى') { $('#cityOtherWrap').hidden = false; $('#fCityOther').value = saved.city === 'أخرى' ? '' : saved.city; } }
+  ['name', 'nameEn', 'phone', 'district', 'address', 'nationalAddress', 'notes'].forEach(k => { const el = $(`#coForm [name="${k}"]`); if (el && saved[k]) el.value = saved[k]; });
+  if (saved.city) { $('#fCity').value = CITIES.includes(saved.city) ? saved.city : 'أخرى'; if ($('#fCity').value === 'أخرى') { $('#cityOtherWrap').hidden = false; $('#regionWrap').hidden = false; $('#fCityOther').value = saved.city === 'أخرى' ? '' : saved.city; if (saved.region) $('#fRegion').value = saved.region; } }
 
   /* summary */
   function renderSummary() {
@@ -83,7 +90,8 @@ Sora.ready(() => {
       <div class="sum-row"><span>الشحن</span><span>${t.shipping ? moneyText(t.shipping) : 'مجاني'}</span></div>
       ${t.codFee ? `<div class="sum-row"><span>رسوم الدفع عند الاستلام</span><span>${moneyText(t.codFee)}</span></div>` : ''}
       <div class="sum-row total"><span>الإجمالي</span><span>${moneyText(t.total)}</span></div>
-      <p class="drawer-note">يوصلك خلال ${esc(cfg.shippingDays)} يوم</p>`;
+      <p class="drawer-note">يوصلك خلال ${esc(S.shipWindow(lines))} يوم</p>`;
+    $('#agreeDays').textContent = S.shipWindow(lines);
     const btn = $('#couponBtn');
     if (btn) btn.addEventListener('click', () => {
       if (coupon && !t.couponError) { coupon = ''; LS.del(KEYS.coupon); }
@@ -126,17 +134,20 @@ Sora.ready(() => {
   };
   function collect() {
     const v = n => ($(`#coForm [name="${n}"]`).value || '').trim();
-    const city = $('#fCity').value === 'أخرى' ? $('#fCityOther').value.trim() : $('#fCity').value;
-    return { name: v('name'), phone: normPhone(v('phone')), rawPhone: v('phone'), city, district: v('district'), address: v('address'), nationalAddress: toAscii(v('nationalAddress')).toUpperCase(), notes: v('notes') };
+    const other = $('#fCity').value === 'أخرى';
+    const city = other ? $('#fCityOther').value.trim() : $('#fCity').value;
+    return { name: v('name'), nameEn: v('nameEn').replace(/\s+/g, ' '), phone: normPhone(v('phone')), rawPhone: v('phone'), city, region: other ? $('#fRegion').value : '', other, district: v('district'), address: v('address'), nationalAddress: toAscii(v('nationalAddress')).toUpperCase().replace(/\s/g, ''), notes: v('notes') };
   }
   function validate(c) {
     const errs = {};
     if (c.name.length < 3) errs.name = ERR.name_invalid;
+    if (!/^[A-Za-z][A-Za-z .'-]{2,49}$/.test(c.nameEn)) errs.nameEn = ERR.name_en_invalid;
     if (!c.phone) errs.phone = ERR.phone_invalid;
     if (c.city.length < 2) errs.city = ERR.city_invalid;
+    if (c.other && !c.region) errs.region = ERR.region_invalid;
     if (c.district.length < 2) errs.district = ERR.district_invalid;
     if (c.address.length < 5) errs.address = ERR.address_invalid;
-    if (c.nationalAddress && !/^[A-Z]{4}\d{4}$/.test(c.nationalAddress)) errs.nationalAddress = ERR.national_address_invalid;
+    if (!/^[A-Z]{4}\d{4}$/.test(c.nationalAddress)) errs.nationalAddress = c.nationalAddress ? ERR.national_address_invalid : ERR.national_address_required;
     if (!$('#fAgree').checked) errs.agree = 'لازم توافقين على السياسات قبل الطلب.';
     $$('[data-err]').forEach(el => { el.textContent = errs[el.dataset.err] || ''; });
     $$('#coForm .input, #coForm .select').forEach(el => el.classList.toggle('invalid', !!errs[el.name]));
@@ -164,7 +175,7 @@ Sora.ready(() => {
     let res;
     try {
       res = await S.api('createOrder', {
-        customer: { name: c.name, phone: c.phone, city: c.city, district: c.district, address: c.address, nationalAddress: c.nationalAddress, notes: c.notes },
+        customer: { name: c.name, nameEn: c.nameEn, phone: c.phone, city: c.city, region: c.region, district: c.district, address: c.address, nationalAddress: c.nationalAddress, notes: c.notes },
         items: lines.map(l => ({ id: l.id, color: l.color.name, size: l.size, qty: l.qty })),
         coupon: t.coupon ? t.coupon.code : '', payment, website: $('#fWebsite').value, captcha: captchaToken,
       });

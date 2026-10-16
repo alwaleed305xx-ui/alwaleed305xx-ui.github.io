@@ -22,9 +22,14 @@ Sora.ready(() => {
       rows: [['XS', '76-80', '58-62', '84-88'], ['S', '80-84', '62-66', '88-92'], ['M', '84-90', '66-72', '92-98'], ['L', '90-96', '72-78', '98-104'], ['XL', '96-102', '78-84', '104-110'], ['2XL', '102-108', '84-90', '110-116']],
       note: 'الملابس الرياضية ضاغطة ومطاطية — لو تحبين اللبس الواسع اختاري مقاس أكبر.',
     },
+    eu: {
+      head: ['المقاس', 'يعادل', 'الصدر (سم)', 'الخصر (سم)', 'الأرداف (سم)'],
+      rows: [['34', 'XS', '80-84', '62-66', '88-92'], ['36', 'S', '84-88', '66-70', '92-96'], ['38', 'M', '88-92', '70-74', '96-100'], ['40', 'L', '92-96', '74-78', '100-104'], ['42', 'XL', '96-102', '78-84', '104-110'], ['44', '2XL', '102-108', '84-90', '110-116'], ['46', '3XL', '108-114', '90-96', '116-122'], ['48', '4XL', '114-120', '96-102', '122-128'], ['50', '5XL', '120-126', '102-108', '128-134'], ['52', '6XL', '126-132', '108-114', '134-140'], ['54-56', '7XL', '132-144', '114-126', '140-152'], ['58-64', '8XL+', '144-168', '126-150', '152-176']],
+      note: 'مقاسات تركية/أوروبية بالأرقام. إذا كنتِ بين مقاسين اختاري الأكبر — القياسات تقريبية وقد تختلف 1-2 سم حسب القطعة.',
+    },
     abaya: {
       head: ['المقاس (الطول)', 'طولك تقريباً', 'طول القطعة'],
-      rows: [['52', '150 - 155 سم', '132 سم'], ['54', '155 - 160 سم', '137 سم'], ['56', '160 - 165 سم', '142 سم'], ['58', '165 - 170 سم', '147 سم'], ['60', '170 - 176 سم', '152 سم']],
+      rows: [['50', '145 - 150 سم', '127 سم'], ['52', '150 - 155 سم', '132 سم'], ['54', '155 - 160 سم', '137 سم'], ['56', '160 - 165 سم', '142 سم'], ['58', '165 - 170 سم', '147 سم'], ['60', '170 - 176 سم', '152 سم'], ['62', '176 - 181 سم', '157 سم']],
       note: 'مقاس العباية والإسدال هو الطول بالإنش من الكتف للأرض. القصّة واسعة وتناسب أغلب الأجسام.',
     },
     onesize: { head: [], rows: [], note: 'مقاس حر بقصّة واسعة يناسب من S إلى 2XL تقريباً.' },
@@ -78,7 +83,7 @@ Sora.ready(() => {
       <button class="btn btn-plum btn-block" id="buyNow">اشتري الآن</button>
 
       <div class="pdp-perks">
-        <div>${I.truck}<span>يوصلك خلال <b>${esc(cfg.shippingDays)} يوم</b> ${S.freeOver() ? ` · شحن مجاني فوق ${S.fmt(S.freeOver())} ر.س` : ''}</span></div>
+        <div>${I.truck}<span>يوصلك خلال <b>${esc(S.shipDaysOf(p))} يوم</b> ${S.freeOver() ? ` · شحن مجاني فوق ${S.fmt(S.freeOver())} ر.س` : ''}</span></div>
         <div>${I.swap}<span>استبدال أو استرجاع خلال ${esc(cfg.returnsDays)} أيام من الاستلام</span></div>
         <div>${I.shield}<span>دفع آمن: مدى · Apple Pay · بطاقات${cfg.codEnabled ? ' · عند الاستلام' : ''}</span></div>
       </div>
@@ -86,7 +91,7 @@ Sora.ready(() => {
       <div class="acc">
         <details open><summary>الوصف والتفاصيل</summary><div class="acc-body"><p>${esc(p.desc)}</p>${(p.details || []).length ? `<ul style="margin-top:.6rem">${p.details.map(d => `<li>${esc(d)}</li>`).join('')}</ul>` : ''}</div></details>
         <details><summary>الخامة والعناية</summary><div class="acc-body"><p><b>الخامة:</b> ${esc(p.fabric || '—')}</p><p><b>العناية:</b> ${esc(p.care || '—')}</p></div></details>
-        <details><summary>الشحن والاستبدال</summary><div class="acc-body"><p>نجهّز طلبك خلال 1-3 أيام ويوصلك خلال ${esc(cfg.shippingDays)} يوم مع رقم تتبّع. رسوم الشحن ${S.fmt(cfg.shippingFee)} ر.س${S.freeOver() ? ` ومجاني فوق ${S.fmt(S.freeOver())} ر.س` : ''}. <a href="policies.html#returns" style="text-decoration:underline">سياسة الاستبدال</a></p></div></details>
+        <details><summary>الشحن والاستبدال</summary><div class="acc-body"><p>نجهّز طلبك خلال 1-3 أيام ويوصلك خلال ${esc(S.shipDaysOf(p))} يوم مع رقم تتبّع. رسوم الشحن ${S.fmt(cfg.shippingFee)} ر.س${S.freeOver() ? ` ومجاني فوق ${S.fmt(S.freeOver())} ر.س` : ''}. <a href="policies.html#returns" style="text-decoration:underline">سياسة الاستبدال</a></p></div></details>
       </div>
     </div>`;
 
@@ -101,8 +106,8 @@ Sora.ready(() => {
     sel.img = Math.max(0, Math.min(sel.img, imgs.length - 1));
     const many = imgs.length > 1;
     g.className = many ? 'gallery' : 'gallery single';
-    g.innerHTML = (many ? `<div class="thumbs">${imgs.map((u, i) => `<button class="${i === sel.img ? 'on' : ''}" data-img="${i}" aria-label="صورة ${i + 1}">${S.imgTag(p, u, sel.color)}</button>`).join('')}</div>` : '') +
-      `<div class="stage photo" id="stage">${S.imgTag(p, imgs[sel.img], sel.color, { eager: true })}
+    g.innerHTML = (many ? `<div class="thumbs">${imgs.map((u, i) => `<button class="${i === sel.img ? 'on' : ''}" data-img="${i}" aria-label="صورة ${i + 1}">${S.imgTag(p, u, sel.color, { w: 200 })}</button>`).join('')}</div>` : '') +
+      `<div class="stage photo" id="stage">${S.imgTag(p, imgs[sel.img], sel.color, { eager: true, w: 1000 })}
         ${many ? `<button class="stage-nav prev" data-step="-1" aria-label="الصورة السابقة">›</button><button class="stage-nav next" data-step="1" aria-label="الصورة التالية">‹</button>
         <div class="stage-dots">${imgs.map((_, i) => `<i class="${i === sel.img ? 'on' : ''}"></i>`).join('')}</div>` : ''}</div>`;
     const stage = $('#stage');
@@ -114,6 +119,21 @@ Sora.ready(() => {
       if (Math.abs(dx) > 40) step(dx > 0 ? 1 : -1);   // RTL: swipe right = next
     });
   }
+  /* sizes the supplier doesn't make in the chosen colour are greyed out */
+  function syncSizes() {
+    $$('#sizes .size-btn').forEach(b => {
+      const na = S.isNa(p, sel.color, b.dataset.size);
+      b.disabled = na;
+      b.classList.toggle('na', na);
+      b.title = na ? 'غير متوفر بهاللون' : '';
+      if (na && sel.size === b.dataset.size) {
+        sel.size = '';
+        b.classList.remove('on'); b.setAttribute('aria-checked', 'false');
+        $('#sizeName').textContent = 'اختاري';
+        $('#sizeHint').textContent = 'المقاس اللي اخترتيه مو متوفر بهاللون — اختاري مقاس ثاني';
+      }
+    });
+  }
   function step(d) {
     const n = S.imagesFor(p, sel.color).length;
     if (n < 2) return;
@@ -121,6 +141,7 @@ Sora.ready(() => {
     renderGallery();
   }
   renderGallery();
+  syncSizes();
 
   $('#pdp').addEventListener('click', e => {
     const st = e.target.closest('[data-step]');
@@ -132,7 +153,9 @@ Sora.ready(() => {
       $$('#swatches .swatch').forEach(b => { const on = b.dataset.color === sel.color; b.classList.toggle('on', on); b.setAttribute('aria-checked', on); });
       $('#colorName').textContent = sel.color;
       renderGallery();
+      syncSizes();
     } else if (t.dataset.size) {
+      if (S.isNa(p, sel.color, t.dataset.size)) return;
       sel.size = t.dataset.size;
       $$('#sizes .size-btn').forEach(b => { const on = b.dataset.size === sel.size; b.classList.toggle('on', on); b.setAttribute('aria-checked', on); });
       $('#sizeName').textContent = sel.size;
