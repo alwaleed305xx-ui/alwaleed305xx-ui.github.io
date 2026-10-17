@@ -15,6 +15,9 @@
  *   CJ_LOGISTICS            optional. Preferred CJ shipping lines in order, comma separated (default: cheapest line).
  *   CJ_MIN_BALANCE_USD      optional. Daily email when the CJ wallet drops below this (default 25).
  *
+ * Delivery countries are the allowlist in products.json → config.zones (fee, free-shipping
+ * threshold and extra days per zone); an order to any other country is refused.
+ *
  * Prices are never trusted from the browser: every order is re-priced from the
  * published products.json, and every payment is fetched from Moyasar and checked
  * for status, amount, currency and order id before the order is marked paid.
@@ -26,11 +29,12 @@ var SHEET_ORDERS = 'Orders';
 var SHEET_SUPPLIERS = 'Suppliers';
 var ORDER_HEADERS = ['orderId', 'createdAt', 'status', 'payment', 'paymentId', 'name', 'phone', 'city', 'district',
   'address', 'nationalAddress', 'notes', 'items', 'subtotal', 'discount', 'coupon', 'shipping', 'codFee', 'total',
-  'supplierRef', 'trackingNo', 'carrier', 'updatedAt', 'log', 'region', 'supplierStatus', 'supplierInfo', 'trackingUrl', 'nameEn'];
+  'supplierRef', 'trackingNo', 'carrier', 'updatedAt', 'log', 'region', 'supplierStatus', 'supplierInfo', 'trackingUrl', 'nameEn',
+  'country', 'province', 'zip', 'email'];
 var SUPPLIER_HEADERS = ['productId', 'supplier', 'url', 'cost', 'notes', 'ref', 'variants', 'logistic', 'from'];
 var STATUSES = ['awaiting_payment', 'new', 'paid', 'processing', 'shipped', 'delivered', 'cancelled', 'refunded'];
 var PAID_LIKE = ['paid', 'processing', 'shipped', 'delivered', 'refunded'];
-var STALE_DATA_ERRORS = ['coupon_invalid', 'coupon_min_not_met', 'product_unavailable', 'color_invalid', 'size_invalid', 'cod_disabled', 'online_payment_disabled'];
+var STALE_DATA_ERRORS = ['coupon_invalid', 'coupon_min_not_met', 'product_unavailable', 'color_invalid', 'size_invalid', 'cod_disabled', 'online_payment_disabled', 'country_unavailable'];
 var ORDER_RE = /^SR\d{6}-[A-Z0-9]{5}$/;
 var UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 var TZ = 'Asia/Riyadh';
@@ -54,6 +58,15 @@ var USD_SAR = 3.75;
    side states: awaiting_balance (CJ wallet too low, re-tried every 30 min), failed (retried with back-off, emailed after 3),
    hold (out of stock / price above what the customer paid — waits for the owner), manual (not linked to CJ) */
 var SA_REGIONS = ['Riyadh', 'Makkah', 'Madinah', 'Eastern Province', 'Al Qassim', 'Asir', 'Tabuk', 'Hail', 'Northern Borders', 'Jazan', 'Najran', 'Al Bahah', 'Al Jawf'];
+/* English country names for supplier shipping labels (a country missing here is sent by its code) */
+var COUNTRY_EN = { SA: 'Saudi Arabia', AE: 'United Arab Emirates', KW: 'Kuwait', QA: 'Qatar', BH: 'Bahrain', OM: 'Oman',
+  AU: 'Australia', NZ: 'New Zealand', CA: 'Canada', CH: 'Switzerland', NO: 'Norway', SG: 'Singapore', MY: 'Malaysia' };
+/* outside Saudi Arabia a postal code is required, except in the Gulf where most addresses have none;
+   known formats are checked exactly so a typo never reaches the shipping label */
+var ZIP_OPTIONAL = ['AE', 'KW', 'QA', 'BH', 'OM'];
+var ZIP_RE = { AU: /^\d{4}$/, NZ: /^\d{4}$/, CH: /^\d{4}$/, NO: /^\d{4}$/, SG: /^\d{6}$/, MY: /^\d{5}$/, CA: /^[A-Z]\d[A-Z] \d[A-Z]\d$/ };
+var ZIP_ANY = /^[A-Z0-9][A-Z0-9 -]{1,9}$/;
+var EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
 /* ───────────── entry points ───────────── */
 
@@ -92,6 +105,7 @@ function handle_(body) {
       case 'fulfillOrder': requireAdmin_(body); return fulfillOrder_(str_(body.orderId, 20).toUpperCase(), 'admin', { force: body.force === true });
       case 'cjStatus': requireAdmin_(body); return cjStatus_();
       case 'cjSearch': requireAdmin_(body); return cjSearch_(body);
+      case 'cjCategories': requireAdmin_(body); return cjCategories_();
       case 'cjProduct': requireAdmin_(body); return cjProduct_(body);
       case 'cjSourcingCreate': requireAdmin_(body); return cjSourcingCreate_(body);
       case 'cjSourcingStatus': requireAdmin_(body); return cjSourcingStatus_();
@@ -130,6 +144,30 @@ function normPhone_(p) {
   if (d.length === 9 && d.charAt(0) === '5') d = '0' + d;
   return /^05\d{8}$/.test(d) ? d : '';
 }
+/* separators, plus the invisible direction marks a phone adds when a number is copied from Contacts or WhatsApp */
+var PHONE_JUNK = /[\s\-().​-‏‪-‮⁠-⁩]/g;
+/* international mobile written with its country code ("+971 50-123 4567", "00971…") → E.164 "+971501234567";
+   the trunk 0 often typed after the code ("+971 050…", "+61 (0)4…") is dropped — mirror intlPhone in assets/js/checkout.js */
+function intlPhone_(p) {
+  var s = digits_(p).replace(PHONE_JUNK, '');
+  if (s.indexOf('00') === 0) s = '+' + s.slice(2);
+  s = s.replace(/^\+(966|971|61|64|41|60)0/, '+$1');
+  return /^\+[1-9]\d{7,14}$/.test(s) ? s : '';
+}
+/* one comparable form for any phone: a Saudi number in any spelling becomes +9665XXXXXXXX,
+   so tracking, rate limits and first-order coupons match however the customer typed it
+   (an international number typed without its "+" still matches) */
+function phoneKey_(p) {
+  var intl = intlPhone_(p);
+  if (intl && intl.indexOf('+966') !== 0) return intl;
+  var sa = normPhone_(p);
+  if (sa) return '+966' + sa.slice(1);
+  return intl || intlPhone_('+' + digits_(p).replace(PHONE_JUNK, ''));
+}
+/* an address outside Saudi Arabia is printed in English: Arabic digits and commas are converted,
+   Arabic letters are refused (ARABIC_RE) — same rule as checkout.js */
+var ARABIC_RE = /[؀-ۿݐ-ݿࢠ-ࣿﭐ-﷿ﹰ-ﻼ]/;
+function latin_(s) { return digits_(s).replace(/،/g, ',').replace(/؛/g, ';'); }
 /* Sheets are formatted as plain text ('@') so phones keep their leading zero and
    timestamps are not turned into dates. Text that would start a formula gets a
    leading space, which can never be parsed as a formula and is harmless if shown. */
@@ -238,8 +276,9 @@ function publicOrder_(o) {
   try { items = JSON.parse(o.items || '[]'); } catch (e) { items = []; }
   return {
     orderId: String(o.orderId), createdAt: String(o.createdAt), status: String(o.status), payment: String(o.payment),
-    paymentId: String(o.paymentId || ''), name: String(o.name), nameEn: String(o.nameEn || ''), phone: String(o.phone), city: String(o.city), region: String(o.region || ''),
+    paymentId: String(o.paymentId || ''), name: String(o.name), nameEn: String(o.nameEn || ''), phone: String(o.phone).trim(), city: String(o.city), region: String(o.region || ''),
     district: String(o.district), address: String(o.address), nationalAddress: String(o.nationalAddress || ''),
+    country: String(o.country || 'SA'), province: String(o.province || ''), zip: String(o.zip || ''), email: String(o.email || ''),
     notes: String(o.notes || ''), items: items, subtotal: Number(o.subtotal), discount: Number(o.discount),
     coupon: String(o.coupon || ''), shipping: Number(o.shipping), codFee: Number(o.codFee), total: Number(o.total),
     supplierRef: String(o.supplierRef || ''), trackingNo: String(o.trackingNo || ''), carrier: String(o.carrier || ''),
@@ -267,8 +306,23 @@ function fetchStore_(fresh) {
   return data;
 }
 
+/* config.zones is the allowlist of delivery countries; a store config without zones ships to
+   Saudi Arabia only, at the flat Saudi fee — same rule as Sora.zones() in assets/js/store.js */
+function zones_(cfg) {
+  if (Array.isArray(cfg.zones) && cfg.zones.length) return cfg.zones;
+  return [{ id: 'SA', countries: ['SA'], fee: cfg.shippingFee, freeOver: cfg.freeShippingOver, extraDays: 0, duties: 'store' }];
+}
+function zoneOf_(cfg, country) {
+  var code = String(country || '').toUpperCase();
+  return zones_(cfg).filter(function (z) {
+    return Array.isArray(z.countries) && z.countries.map(function (c) { return String(c).toUpperCase(); }).indexOf(code) !== -1;
+  })[0] || null;
+}
+
 /* MUST mirror Sora.totals() in assets/js/store.js */
-function computeTotals_(cfg, lines, couponCode, payment) {
+function computeTotals_(cfg, lines, couponCode, payment, country) {
+  var zone = zoneOf_(cfg, country || 'SA');
+  if (!zone) fail_('country_unavailable');
   var subtotal = round2_(lines.reduce(function (s, l) { return s + l.unit * l.qty; }, 0));
   var discount = 0, coupon = null;
   if (couponCode) {
@@ -280,15 +334,18 @@ function computeTotals_(cfg, lines, couponCode, payment) {
     coupon = c;
   }
   var after = round2_(subtotal - discount);
-  var free = Number(cfg.freeShippingOver);
-  var shipping = lines.length === 0 ? 0 : (isFinite(free) && free > 0 && after >= free ? 0 : round2_(Number(cfg.shippingFee) || 0));
+  var free = Number(zone.freeOver);
+  var shipping = lines.length === 0 ? 0 : (isFinite(free) && free > 0 && after >= free ? 0 : round2_(Number(zone.fee) || 0));
   var codFee = payment === 'cod' ? round2_(Number(cfg.codFee) || 0) : 0;
   return { subtotal: subtotal, discount: discount, coupon: coupon ? coupon.code : '', couponObj: coupon, shipping: shipping, codFee: codFee, total: round2_(after + shipping + codFee) };
 }
 
-function priceWith_(store, raw, couponCode, payment) {
+function priceWith_(store, raw, couponCode, payment, country) {
   var cfg = store.config || {};
-  if (payment === 'cod' && !cfg.codEnabled) fail_('cod_disabled');
+  country = country || 'SA';
+  if (!zoneOf_(cfg, country)) fail_('country_unavailable');
+  /* cash on delivery is collected by Saudi carriers only */
+  if (payment === 'cod' && (!cfg.codEnabled || country !== 'SA')) fail_('cod_disabled');
   if (payment === 'online' && (!prop_('MOYASAR_SECRET_KEY') || !cfg.moyasarPublishableKey)) fail_('online_payment_disabled');
   var merged = {};
   raw.forEach(function (it) {
@@ -308,20 +365,20 @@ function priceWith_(store, raw, couponCode, payment) {
     else merged[key] = { id: id, name: p.name, color: c.name, size: String(s), qty: qty, unit: round2_(p.price) };
   });
   var lines = Object.keys(merged).map(function (k) { var l = merged[k]; l.line = round2_(l.unit * l.qty); return l; });
-  var t = computeTotals_(cfg, lines, couponCode, payment);
+  var t = computeTotals_(cfg, lines, couponCode, payment, country);
   if (payment === 'online' && Math.round(t.total * 100) < 100) fail_('amount_too_small');
   return { lines: lines, totals: t };
 }
 
 /* Prices against the cached store; if the cache disagrees with what the shopper
-   just saw (new coupon, price, colour, payment setting), retry once fresh. */
-function priceOrder_(raw, couponCode, payment) {
+   just saw (new coupon, price, colour, payment setting, delivery country), retry once fresh. */
+function priceOrder_(raw, couponCode, payment, country) {
   var store = fetchStore_(false);
   try {
-    return priceWith_(store, raw, couponCode, payment);
+    return priceWith_(store, raw, couponCode, payment, country);
   } catch (err) {
     if (!store._fromCache || STALE_DATA_ERRORS.indexOf(code_(err)) === -1) throw err;
-    return priceWith_(fetchStore_(true), raw, couponCode, payment);
+    return priceWith_(fetchStore_(true), raw, couponCode, payment, country);
   }
 }
 
@@ -342,31 +399,58 @@ function verifyHuman_(token) {
 function createOrder_(b) {
   if (b.website) fail_('rejected');                       // honeypot field
   var c = b.customer || {};
-  var name = str_(c.name, 60), phone = normPhone_(c.phone), city = str_(c.city, 40), district = str_(c.district, 60);
-  var address = str_(c.address, 200), national = str_(c.nationalAddress, 12).replace(/\s/g, '').toUpperCase(), notes = str_(c.notes, 300);
-  var nameEn = str_(c.nameEn, 50);
-  if (name.length < 3) fail_('name_invalid');
-  if (!/^[A-Za-z][A-Za-z .'-]{2,49}$/.test(nameEn)) fail_('name_en_invalid');
-  if (!phone) fail_('phone_invalid');
-  if (city.length < 2) fail_('city_invalid');
-  var region = SA_CITIES[city] ? SA_CITIES[city][1] : str_(c.region, 30);
-  if (SA_REGIONS.indexOf(region) === -1) fail_('region_invalid');
-  if (district.length < 2) fail_('district_invalid');
-  if (address.length < 5) fail_('address_invalid');
-  /* Saudi carriers must refuse parcels without a National Address (TGA, from 1 Jan 2026) */
-  if (!national) fail_('national_address_required');
-  if (!/^[A-Z]{4}\d{4}$/.test(national)) fail_('national_address_invalid');
+  var country = str_(c.country || 'SA', 4).toUpperCase();
+  /* the zone allowlist itself is enforced by priceWith_ — after the rate limits and the captcha,
+     so a junk request never costs a download of the store */
+  if (!/^[A-Z]{2}$/.test(country)) fail_('country_unavailable');
+  var nameEn = str_(c.nameEn, 50), notes = str_(c.notes, 300);
+  var nameEnOk = /^[A-Za-z][A-Za-z .'-]{2,49}$/.test(nameEn);
+  var name, phone, city, region = '', district = '', address, national = '', province = '', zip = '', email = '';
+  if (country === 'SA') {
+    name = str_(c.name, 60); phone = normPhone_(c.phone); city = str_(c.city, 40); district = str_(c.district, 60);
+    address = str_(c.address, 200); national = str_(c.nationalAddress, 12).replace(/\s/g, '').toUpperCase();
+    if (name.length < 3) fail_('name_invalid');
+    if (!nameEnOk) fail_('name_en_invalid');
+    if (!phone) fail_('phone_invalid');
+    if (city.length < 2) fail_('city_invalid');
+    region = SA_CITIES[city] ? SA_CITIES[city][1] : str_(c.region, 30);
+    if (SA_REGIONS.indexOf(region) === -1) fail_('region_invalid');
+    if (district.length < 2) fail_('district_invalid');
+    if (address.length < 5) fail_('address_invalid');
+    /* Saudi carriers must refuse parcels without a National Address (TGA, from 1 Jan 2026) */
+    if (!national) fail_('national_address_required');
+    if (!/^[A-Z]{4}\d{4}$/.test(national)) fail_('national_address_invalid');
+  } else {
+    /* outside Saudi Arabia the label is written in English: the English name is the customer's name,
+       the phone carries its country code, and the email gets the carrier's delivery updates */
+    name = nameEn; phone = intlPhone_(c.phone) && phoneKey_(c.phone); email = str_(c.email, 100).toLowerCase();
+    province = latin_(str_(c.province, 60)); city = latin_(str_(c.city, 50)); address = latin_(str_(c.address, 200));
+    zip = digits_(str_(c.zip, 12)).toUpperCase();
+    if (country === 'CA' && /^[A-Z]\d[A-Z]\d[A-Z]\d$/.test(zip)) zip = zip.slice(0, 3) + ' ' + zip.slice(3);
+    if (!nameEnOk) fail_('name_en_invalid');
+    if (!phone) fail_('phone_invalid');
+    if (!EMAIL_RE.test(email)) fail_('email_invalid');
+    if (province.length < 2) fail_('province_invalid');
+    if (ARABIC_RE.test(province)) fail_('province_latin');
+    if (city.length < 2) fail_('city_invalid');
+    if (ARABIC_RE.test(city)) fail_('city_latin');
+    if (!zip && ZIP_OPTIONAL.indexOf(country) === -1) fail_('zip_required');
+    if (zip && !(ZIP_RE[country] || ZIP_ANY).test(zip)) fail_('zip_invalid');
+    if (address.length < 5) fail_('address_invalid');
+    if (ARABIC_RE.test(address)) fail_('address_latin');
+  }
   var raw = Array.isArray(b.items) ? b.items : [];
   if (!raw.length) fail_('items_invalid');
   if (raw.length > 20) fail_('too_many_items');
   var payment = b.payment === 'cod' ? 'cod' : 'online';
 
   /* only successful orders are counted (below), so junk requests cannot fill the limits */
-  if (!rateOk_('ord_ph_' + phone, 8, 3600, true)) fail_('too_many_orders');
+  var phKey = phoneKey_(phone);
+  if (!rateOk_('ord_ph_' + phKey, 8, 3600, true)) fail_('too_many_orders');
   if (!rateOk_('ord_all', 240, 600, true)) fail_('busy_try_again');
   verifyHuman_(b.captcha);
 
-  var priced = priceOrder_(raw, b.coupon, payment);
+  var priced = priceOrder_(raw, b.coupon, payment, country);
   var t = priced.totals;
 
   var lock = LockService.getScriptLock();
@@ -378,7 +462,7 @@ function createOrder_(b) {
     var H = all.headers;
     if (t.couponObj && t.couponObj.firstOrderOnly) {
       var phCol = H.indexOf('phone'), stCol = H.indexOf('status');
-      var used = all.rows.some(function (r) { return String(r[phCol]) === phone && (PAID_LIKE.indexOf(String(r[stCol])) !== -1 || String(r[stCol]) === 'new'); });
+      var used = all.rows.some(function (r) { return phoneKey_(r[phCol]) === phKey && (PAID_LIKE.indexOf(String(r[stCol])) !== -1 || String(r[stCol]) === 'new'); });
       if (used) fail_('coupon_first_order_only');
     }
     var idCol = H.indexOf('orderId');
@@ -390,17 +474,18 @@ function createOrder_(b) {
       orderId: orderId, createdAt: now_(), status: status, payment: payment, paymentId: '', name: name, nameEn: nameEn, phone: phone,
       city: city, region: region, district: district, address: address, nationalAddress: national, notes: notes, items: JSON.stringify(priced.lines),
       subtotal: t.subtotal, discount: t.discount, coupon: t.coupon, shipping: t.shipping, codFee: t.codFee, total: t.total,
-      supplierRef: '', trackingNo: '', carrier: '', updatedAt: now_(), log: now_() + ' created (' + payment + ')',
+      supplierRef: '', trackingNo: '', carrier: '', updatedAt: now_(), log: now_() + ' created (' + payment + (country === 'SA' ? '' : ', ' + country) + ')',
+      country: country, province: province, zip: zip, email: email,
     };
     appendRow_(sh, H.map(function (h) { return h in rec ? cell_(rec[h]) : ''; }));
   } finally {
     lock.releaseLock();
   }
-  rateOk_('ord_ph_' + phone, 8, 3600);
+  rateOk_('ord_ph_' + phKey, 8, 3600);
   rateOk_('ord_all', 240, 600);
   if (payment === 'cod') notifyOwner_('طلب جديد (دفع عند الاستلام) ' + orderId, orderId);
   var totals = { subtotal: t.subtotal, discount: t.discount, coupon: t.coupon, shipping: t.shipping, codFee: t.codFee, total: t.total };
-  return { ok: true, orderId: orderId, payment: payment, total: t.total, amount: Math.round(t.total * 100), currency: 'SAR', totals: totals };
+  return { ok: true, orderId: orderId, payment: payment, total: t.total, amount: Math.round(t.total * 100), currency: 'SAR', country: country, totals: totals };
 }
 
 function newOrderId_() {
@@ -503,15 +588,16 @@ function moyasarWebhook_(b) {
 }
 
 function trackOrder_(b) {
-  var orderId = str_(b.orderId, 20).toUpperCase(), phone = normPhone_(b.phone);
+  /* Saudi (05…) and international (+…) phones both compare in their normalised form */
+  var orderId = str_(b.orderId, 20).toUpperCase(), phone = phoneKey_(b.phone);
   if (!ORDER_RE.test(orderId) || !phone) fail_('not_found');
   if (!rateOk_('tr_' + phone, 30, 900)) fail_('busy_try_again');
   var ctx = findOrder_(orderId);
-  if (!ctx || String(ctx.order.phone) !== phone) fail_('not_found');
+  if (!ctx || phoneKey_(ctx.order.phone) !== phone) fail_('not_found');
   var o = publicOrder_(ctx.order);
   return {
     ok: true, orderId: o.orderId, status: o.status, payment: o.payment, createdAt: o.createdAt, total: o.total,
-    carrier: o.carrier, trackingNo: o.trackingNo, trackingUrl: /^https:\/\//.test(o.trackingUrl) ? o.trackingUrl : '', city: o.city,
+    carrier: o.carrier, trackingNo: o.trackingNo, trackingUrl: /^https:\/\//.test(o.trackingUrl) ? o.trackingUrl : '', city: o.city, country: o.country,
     items: o.items.map(function (i) { return { name: i.name, color: i.color, size: i.size, qty: i.qty }; }),
   };
 }
@@ -704,7 +790,20 @@ function cjCall_(method, path, body, query) {
   return last;
 }
 
+/* the CJ shipping label, from the order's delivery country */
 function cjAddress_(o) {
+  var country = String(o.country || 'SA').trim().toUpperCase();
+  if (country !== 'SA') {
+    var a = {
+      shippingCountryCode: country, shippingCountry: COUNTRY_EN[country] || country,
+      shippingProvince: str_(o.province, 50), shippingCity: str_(o.city, 50), shippingZip: str_(o.zip, 20),
+      shippingAddress: str_(o.address, 480), shippingCustomerName: str_(o.nameEn || o.name, 50),
+      shippingPhone: intlPhone_(o.phone), email: str_(o.email, 100),
+    };
+    if (!a.shippingZip) delete a.shippingZip;   // most Gulf addresses have no postcode
+    if (!a.email || a.email.length > 50) delete a.email;   // CJ takes up to 50 characters and the field is optional
+    return a;
+  }
   var c = SA_CITIES[String(o.city)];
   var d = normPhone_(o.phone);
   return {
@@ -863,8 +962,11 @@ function placeCjOrders_(o, opts) {
       });
       /* a failed lookup is a network/CJ hiccup — retry it; a removed or sold-out variant needs the owner */
       if (problem) { failure = problem; if (problem.indexOf('variant_check_failed') !== 0) hold = true; return; }
-      var fr = cjCall_('post', '/logistic/freightCalculate', { startCountryCode: from, endCountryCode: 'SA',
-        products: g.products.map(function (p) { return { vid: p.vid, quantity: p.quantity }; }) });
+      /* quote to the order's own country (and postcode, which some lines price by) */
+      var freight = { startCountryCode: from, endCountryCode: String(o.country || 'SA').trim().toUpperCase(),
+        products: g.products.map(function (p) { return { vid: p.vid, quantity: p.quantity }; }) };
+      if (String(o.zip || '').trim()) freight.zip = String(o.zip).trim();
+      var fr = cjCall_('post', '/logistic/freightCalculate', freight);
       var opt = fr.ok ? cjPickLogistic_(fr.data, g.logistic) : null;
       if (!opt) { failure = 'no_shipping_line' + (fr.ok ? '' : ' (cj ' + fr.code + ')'); return; }
       /* never buy at a loss: CJ cost (goods + shipping) must stay under what the customer paid for these lines
@@ -1158,12 +1260,28 @@ function cjStatus_() {
 
 /* admin product search (50 CJ points per call) */
 function cjSearch_(b) {
-  var r = cjCall_('get', '/product/listV2', null, { keyWord: str_(b.keyword, 80), page: Math.max(1, Math.min(50, Number(b.page) || 1)), size: Math.max(10, Math.min(100, Number(b.size) || 20)) });
+  /* keyword, a third-level category, or both; orderBy 0 best match, 1 listing count, 2 price, 3 newest, 4 stock */
+  var q = { keyWord: str_(b.keyword, 80), categoryId: str_(b.categoryId, 64), page: Math.max(1, Math.min(50, Number(b.page) || 1)), size: Math.max(10, Math.min(100, Number(b.size) || 20)) };
+  if (b.orderBy != null && b.orderBy !== '') q.orderBy = Math.max(0, Math.min(4, Math.floor(Number(b.orderBy) || 0)));
+  var r = cjCall_('get', '/product/listV2', null, q);
   if (!r.ok) fail_('cj_' + r.code);
   var content = (r.data && r.data.content) || [];
   var list = [];
   content.forEach(function (c) { (c.productList || []).forEach(function (p) { list.push({ pid: String(p.id), name: String(p.nameEn || ''), image: String(p.bigImage || ''), priceUsd: String(p.sellPrice || ''), listed: Number(p.listedNum) || 0, stock: Number(p.warehouseInventoryNum) || 0 }); }); });
   return { ok: true, total: r.data ? Number(r.data.totalRecords) || list.length : list.length, list: list };
+}
+
+/* CJ's category tree flattened to [first, second, third, thirdId] rows, for browsing a category with cjSearch */
+function cjCategories_() {
+  var r = cjCall_('get', '/product/getCategory', null, null);
+  if (!r.ok) fail_('cj_' + r.code);
+  var list = [];
+  (r.data || []).forEach(function (a) {
+    (a.categoryFirstList || []).forEach(function (b2) {
+      (b2.categorySecondList || []).forEach(function (c) { list.push([String(a.categoryFirstName || ''), String(b2.categorySecondName || ''), String(c.categoryName || ''), String(c.categoryId || '')]); });
+    });
+  });
+  return { ok: true, list: list };
 }
 
 /* the owner's own picks: everything added to "My Products" on cjdropshipping.com (no points cost listed).
@@ -1188,10 +1306,13 @@ function cjMyProducts_() {
   return { ok: true, total: out.length, list: out };
 }
 
-/* admin product detail + Saudi shipping quote (≈20 CJ points) — the admin panel turns it into a product */
+/* admin product detail + shipping quote (≈20 CJ points) — the admin panel turns it into a product.
+   The quote goes to Saudi Arabia unless b.country names another delivery country. */
 function cjProduct_(b) {
   var pid = str_(b.pid, 60);
   if (!pid) fail_('pid_required');
+  var to = str_(b.country, 4).toUpperCase();
+  if (!/^[A-Z]{2}$/.test(to)) to = 'SA';
   var r = cjCall_('get', '/product/query', null, { pid: pid });
   if (!r.ok || !r.data) fail_('cj_' + (r.code || 'not_found'));
   var p = r.data;
@@ -1215,7 +1336,7 @@ function cjProduct_(b) {
   if (origins.length && !stock.CN) tryFrom.shift();
   var shipping = [], from = tryFrom[0] || 'CN';
   for (var i = 0; i < tryFrom.length && variants.length && !shipping.length; i++) {
-    var fr = cjCall_('post', '/logistic/freightCalculate', { startCountryCode: tryFrom[i], endCountryCode: 'SA', products: [{ vid: variants[0].vid, quantity: 1 }] });
+    var fr = cjCall_('post', '/logistic/freightCalculate', { startCountryCode: tryFrom[i], endCountryCode: to, products: [{ vid: variants[0].vid, quantity: 1 }] });
     /* tax/clearance are what CJ itself charges on top of postage for the route (0 when the carrier collects VAT on delivery) */
     if (fr.ok && Array.isArray(fr.data) && fr.data.length) {
       from = tryFrom[i];
@@ -1224,7 +1345,7 @@ function cjProduct_(b) {
     }
   }
   return { ok: true, product: { pid: String(p.pid || pid), name: String(p.productNameEn || ''), sku: String(p.productSku || ''), images: imgs.slice(0, 10),
-    optionNames: String(p.productKeyEn || ''), weight: Number(p.productWeight) || 0, variants: variants, shipping: shipping, from: from, stock: stock } };
+    optionNames: String(p.productKeyEn || ''), weight: Number(p.productWeight) || 0, variants: variants, shipping: shipping, from: from, to: to, stock: stock } };
 }
 
 /* Ask CJ's agents to find products that are linked to another supplier (e.g. an AliExpress URL).
@@ -1304,10 +1425,13 @@ function notifyOwner_(subject, orderId, extra) {
     var rows = o.items.map(function (i) {
       return '<tr><td>' + esc_(i.name) + '</td><td>' + esc_(i.color) + '</td><td>' + esc_(i.size) + '</td><td>' + i.qty + '</td><td>' + i.line + '</td></tr>';
     }).join('');
+    var where = o.country === 'SA'
+      ? esc_(o.city) + '، ' + esc_(o.district) + '، ' + esc_(o.address) + (o.nationalAddress ? ' (العنوان الوطني ' + esc_(o.nationalAddress) + ')' : '')
+      : '<span dir="ltr">' + esc_([o.address, o.city, o.province, o.zip, COUNTRY_EN[o.country] || o.country].filter(String).join(', ')) + '</span>' +
+        '<br><b>الدولة:</b> ' + esc_(o.country) + ' · <b>الإيميل:</b> ' + esc_(o.email);
     var html = '<div dir="rtl" style="font-family:Tahoma,Arial">' +
       '<h2>' + esc_(subject) + '</h2>' + (extra ? '<p style="background:#fff4d6;padding:10px">' + esc_(extra) + '</p>' : '') +
-      '<p><b>العميلة:</b> ' + esc_(o.name) + ' — ' + esc_(o.phone) + '<br><b>العنوان:</b> ' + esc_(o.city) + '، ' + esc_(o.district) + '، ' + esc_(o.address) +
-      (o.nationalAddress ? ' (العنوان الوطني ' + esc_(o.nationalAddress) + ')' : '') + '</p>' +
+      '<p><b>العميلة:</b> ' + esc_(o.name) + ' — <span dir="ltr">' + esc_(o.phone) + '</span><br><b>العنوان:</b> ' + where + '</p>' +
       '<table border="1" cellpadding="6" style="border-collapse:collapse"><tr><th>القطعة</th><th>اللون</th><th>المقاس</th><th>الكمية</th><th>المبلغ</th></tr>' + rows + '</table>' +
       '<p><b>الإجمالي:</b> ' + o.total + ' ر.س (' + (o.payment === 'cod' ? 'دفع عند الاستلام' : 'أونلاين') + ')</p>' +
       (prop_('CJ_API_KEY') ? '<p>القطع المربوطة بـ CJ تنطلب وتندفع من رصيد CJ تلقائياً، ورقم التتبّع يوصل للعميلة بنفسه. حالة الطلب في لوحة التحكم ← الطلبات.</p>'
