@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Sora Fashion | سورا فاشن — فساتين، عبايات، وملابس رياضية</title>
-<meta name="description" content="سورا فاشن — أزياء نسائية منتقاة: فساتين ماكسي وسهرة، عبايات، جلابيات، ليقنز وأطقم رياضية، بيجامات وطرح. دفع آمن بمدى وأبل باي وتوصيل لكل مدن المملكة.">
+<title>Sora Fashion | سورا فاشن — فساتين مودرن، بكيني، عبايات، وملابس رياضية</title>
+<meta name="description" content="سورا فاشن — أزياء نسائية منتقاة: فساتين مودرن وسهرة، بكيني ومايوهات، أطقم رياضية فاخرة، عبايات، جلابيات، بيجامات وطرح. دفع آمن بمدى وأبل باي وتوصيل لكل مدن المملكة.">
 <meta name="theme-color" content="#5e2b48">
 <meta property="og:title" content="Sora Fashion — سورا فاشن">
-<meta property="og:description" content="فساتين، عبايات، وملابس رياضية منتقاة — دفع آمن وتوصيل لكل المملكة.">
+<meta property="og:description" content="فساتين مودرن، بكيني، رياضي فاخر وعبايات منتقاة — دفع آمن وتوصيل لكل المملكة.">
 <meta property="og:type" content="website">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -23,12 +23,12 @@
   <section class="hero">
     <div class="container hero-inner">
       <div class="hero-copy reveal">
-        <span class="eyebrow">مجموعة الشتاء ٢٠٢٦</span>
+        <span class="eyebrow">الكولكشن الجديد ٢٠٢٦</span>
         <h1>أناقتك اليومية<br><em>بقصّات تشبهك</em></h1>
-        <p class="lead">فساتين وعبايات وملابس رياضية منتقاة بعناية — خامات مريحة، مقاسات واضحة، ودفع آمن بمدى وأبل باي.</p>
+        <p class="lead">فساتين مودرن، بكيني للصيف، أطقم رياضية فاخرة وعبايات منتقاة بعناية — مقاسات واضحة ودفع آمن بمدى وأبل باي.</p>
         <div class="hero-cta">
           <a class="btn btn-dark" href="#catalog">تسوّقي المجموعة</a>
-          <a class="btn btn-line" href="index.html?cat=sport#catalog">الملابس الرياضية</a>
+          <a class="btn btn-line" href="#showcases">الكولكشن الجديد</a>
         </div>
         <div class="hero-perks" id="heroPerks"></div>
       </div>
@@ -51,10 +51,13 @@
   <!-- new arrivals -->
   <section class="section section-alt" id="new">
     <div class="container">
-      <div class="sec-head reveal"><div><h2>وصلنا جديد</h2><p>قطع اخترناها لموسم الشتاء والمناسبات</p></div><a class="sec-link" href="#catalog">شوفي الكل</a></div>
+      <div class="sec-head reveal"><div><h2>وصلنا جديد</h2><p>أحدث القطع اللي اخترناها لك هالموسم</p></div><a class="sec-link" href="#catalog">شوفي الكل</a></div>
       <div class="grid" id="newGrid"></div>
     </div>
   </section>
+
+  <!-- collection showcases (categories with a "showcase" block in products.json) -->
+  <div id="showcases"></div>
 
   <!-- promo -->
   <section class="section">
@@ -85,6 +88,7 @@
         </select>
       </div>
       <div class="grid" id="catalogGrid"></div>
+      <div class="more-row"><button type="button" class="btn btn-line" id="catalogMore" hidden>عرض المزيد</button></div>
       <p class="empty-state" id="catalogEmpty" hidden></p>
     </div>
   </section>

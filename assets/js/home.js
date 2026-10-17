@@ -21,11 +21,13 @@ Sora.ready(() => {
     const p = list.find(x => x.featured) || list[0];
     return p ? { p, src: p.images[0] } : null;
   };
-  $('#heroArt').innerHTML = [
+  /* the hero arches lead with the showcased collections once they have photos */
+  const featuredCats = S.cats.filter(c => c.showcase && photoOf(c.id)).slice(0, 3).map(c => [c.type, c.hex, c.name, c.id]);
+  $('#heroArt').innerHTML = (featuredCats.length === 3 ? featuredCats : [
     ['abaya', '#1c1b1d', 'عبايات', 'abayas'],
     ['maxi', '#c99a94', 'فساتين', 'dresses'],
     ['set', '#7f8f74', 'رياضي', 'sport'],
-  ].map(([t, c, label, cat]) => {
+  ]).map(([t, c, label, cat]) => {
     const ph = photoOf(cat);
     return `<a class="arch${ph ? ' has-photo' : ''}" href="index.html?cat=${cat}#catalog">${ph ? S.imgTag(ph.p, ph.src, '', { eager: true, w: 600 }) : Garment.svg(t, c)}<span class="arch-tag">${label}</span></a>`;
   }).join('');
@@ -47,10 +49,43 @@ Sora.ready(() => {
       <b>${esc(c.name)}</b><small>${counts[c.id]} قطعة</small>
     </a>`).join('');
 
-  /* new arrivals */
-  const fresh = S.products.filter(p => p.badge === 'new');
-  const newest = (fresh.length >= 4 ? fresh : [...S.products].sort((a, b) => b.id - a.id)).slice(0, 8);
+  /* a showcased category's pieces in display order: featured first */
+  const rankedOf = catId => {
+    const list = S.products.filter(p => p.cat === catId);
+    return list.filter(p => p.featured).concat(list.filter(p => !p.featured));
+  };
+  const RAIL = 12;
+
+  /* new arrivals: one new piece per category in turn, skipping what the showcase rails already show */
+  const freshBy = S.cats.map(c => (c.showcase ? rankedOf(c.id).slice(RAIL) : S.products.filter(p => p.cat === c.id))
+    .filter(p => p.badge === 'new')).filter(l => l.length);
+  const newest = [];
+  for (let i = 0; newest.length < 8 && freshBy.some(l => l[i]); i++) freshBy.forEach(l => { if (l[i] && newest.length < 8) newest.push(l[i]); });
+  if (newest.length < 4) newest.splice(0, newest.length, ...[...S.products].sort((a, b) => b.id - a.id).slice(0, 8));
   $('#newGrid').innerHTML = newest.map(S.card).join('');
+
+  /* collection showcases: a banner with three photos from the category, then a scrolling rail of its pieces */
+  $('#showcases').innerHTML = S.cats.filter(c => c.showcase && counts[c.id]).map(c => {
+    const sc = c.showcase;
+    const ranked = rankedOf(c.id);
+    const pics = ranked.filter(p => (p.images || []).length).slice(0, 3);
+    const style = `--sc-bg:${esc(sc.bg || c.hex || '#1f1a1d')};--sc-fg:${esc(sc.fg || '#fbf8f4')};--sc-accent:${esc(sc.accent || '#a9874f')}`;
+    return `<section class="section showcase" id="sc-${esc(c.id)}" style="${style}">
+      <div class="container">
+        <div class="sc-banner reveal">
+          <div class="sc-copy">
+            ${sc.eyebrow ? `<span class="eyebrow">${esc(sc.eyebrow)}</span>` : ''}
+            <h2>${esc(sc.title || c.name)}</h2>
+            <p>${esc(sc.sub || c.desc || '')}</p>
+            <a class="sc-cta" href="index.html?cat=${esc(c.id)}#catalog">تسوّقي ${esc(c.name)} <small>${counts[c.id]} قطعة</small></a>
+          </div>
+          <div class="sc-mosaic">${pics.map((p, i) => `<a class="sc-pic sc-pic-${i + 1}" href="${S.productUrl(p)}" aria-label="${esc(p.name)}">${S.imgTag(p, p.images[0], '', { w: 600 })}</a>`).join('')}</div>
+        </div>
+        <div class="sc-rail">${ranked.slice(0, RAIL).map(S.card).join('')}</div>
+      </div>
+    </section>`;
+  }).join('');
+  S.reveal($('#showcases'));
 
   /* promo */
   const promo = (cfg.coupons || []).find(c => c.active !== false && c.showOnHome);
@@ -78,6 +113,8 @@ Sora.ready(() => {
     $('#chips').innerHTML = list.map(c => `<button class="chip ${view !== 'fav' && c.id === activeCat ? 'active' : ''}" data-chip="${esc(c.id)}">${esc(c.name)}</button>`).join('') +
       (favN ? `<button class="chip ${view === 'fav' ? 'active' : ''}" data-chip="__fav">♡ المفضلة (${favN})</button>` : '');
   }
+  const PAGE = 24;
+  let shown = PAGE;
   function grid() {
     let list = S.products;
     if (view === 'fav') { const f = S.favs().map(String); list = list.filter(p => f.includes(String(p.id))); }
@@ -89,7 +126,10 @@ Sora.ready(() => {
       priceDesc: (a, b) => b.price - a.price,
     };
     list = [...list].sort(sorters[sortBy]);
-    $('#catalogGrid').innerHTML = list.map(S.card).join('');
+    $('#catalogGrid').innerHTML = list.slice(0, shown).map(S.card).join('');
+    const more = $('#catalogMore');
+    more.hidden = list.length <= shown;
+    more.textContent = `عرض المزيد (${list.length - shown})`;
     const empty = $('#catalogEmpty');
     empty.hidden = list.length > 0;
     empty.textContent = view === 'fav' ? 'ما عندك قطع بالمفضلة للحين — اضغطي ♡ على أي قطعة تعجبك' : 'ما فيه قطع بهالقسم حالياً';
@@ -105,6 +145,7 @@ Sora.ready(() => {
     else { view = ''; activeCat = b.dataset.chip; }
     const q = view === 'fav' ? '?view=fav' : (activeCat === 'all' ? '' : `?cat=${encodeURIComponent(activeCat)}`);
     history.replaceState(null, '', `${location.pathname}${q}#catalog`);
+    shown = PAGE;
     chips(); grid();
   });
   $('#catRail').addEventListener('click', e => {
@@ -113,10 +154,12 @@ Sora.ready(() => {
     e.preventDefault();
     view = ''; activeCat = t.dataset.cat;
     history.replaceState(null, '', `${location.pathname}?cat=${encodeURIComponent(activeCat)}#catalog`);
+    shown = PAGE;
     chips(); grid();
     $('#catalog').scrollIntoView({ behavior: 'smooth' });
   });
-  $('#sort').addEventListener('change', e => { sortBy = e.target.value; grid(); });
+  $('#sort').addEventListener('change', e => { sortBy = e.target.value; shown = PAGE; grid(); });
+  $('#catalogMore').addEventListener('click', () => { shown += PAGE; grid(); });
   document.addEventListener('click', e => { if (e.target.closest('[data-fav]') && view === 'fav') setTimeout(() => { chips(); grid(); }, 0); });
   chips(); grid();
 
