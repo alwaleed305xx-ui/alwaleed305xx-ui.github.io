@@ -848,9 +848,17 @@ function placeCjOrders_(o, opts) {
         if (problem) return;
         var v = cjCall_('get', '/product/variant/queryByVid', null, { vid: p.vid, features: 'enable_inventory' });
         if (!v.ok || !v.data) { problem = v.code === 1602002 || v.code === 1602003 ? 'variant_removed ' + p.vid : 'variant_check_failed ' + v.code; return; }
-        var stock = 0;
+        var stock = 0, known = (v.data.inventories || []).length > 0;
         (v.data.inventories || []).forEach(function (inv) { if (String(inv.countryCode || from).toUpperCase() === from) stock += Number(inv.totalInventory) || 0; });
-        if ((v.data.inventories || []).length && stock < p.quantity) { problem = 'out_of_stock ' + p.vid; return; }
+        if (!known) {
+          /* the variant lookup doesn't always carry stock: ask the warehouse stock endpoint (10 points) */
+          var sq = cjCall_('get', '/product/stock/queryByVid', null, { vid: p.vid });
+          if (sq.ok && Array.isArray(sq.data) && sq.data.length) {
+            known = true;
+            sq.data.forEach(function (w) { if (String(w.countryCode || '').toUpperCase() === from) stock += Number(w.totalInventoryNum != null ? w.totalInventoryNum : w.storageNum) || 0; });
+          }
+        }
+        if (known && stock < p.quantity) { problem = 'out_of_stock ' + p.vid; return; }
         goodsUsd += (Number(v.data.variantSellPrice) || 0) * p.quantity;
       });
       /* a failed lookup is a network/CJ hiccup — retry it; a removed or sold-out variant needs the owner */
@@ -1196,13 +1204,12 @@ function cjProduct_(b) {
   /* which warehouses hold stock: brand-store items often sit only in a US/EU warehouse, and a quote from China
      would then be empty or wrong. China first (usually cheapest), then the other stocked countries. */
   var stock = {};
-  (p.variants || []).forEach(function (v) {
-    (v.inventories || []).forEach(function (inv) {
-      var c = String(inv.countryCode || '').toUpperCase();
-      var n = Number(inv.totalInventory != null ? inv.totalInventory : inv.stock) || 0;
-      if (/^[A-Z]{2}$/.test(c) && n > 0) stock[c] = (stock[c] || 0) + n;
-    });
-  });
+  var add = function (c, n) { c = String(c || '').toUpperCase(); n = Number(n) || 0; if (/^[A-Z]{2}$/.test(c) && n > 0) stock[c] = (stock[c] || 0) + n; };
+  var inv = cjCall_('get', '/product/stock/getInventoryByPid', null, { pid: String(p.pid || pid) });   // 10 points
+  if (inv.ok && inv.data) (inv.data.inventories || []).forEach(function (x) { add(x.countryCode, x.totalInventoryNum); });
+  if (!Object.keys(stock).length) {
+    (p.variants || []).forEach(function (v) { (v.inventories || []).forEach(function (x) { add(x.countryCode, x.totalInventory != null ? x.totalInventory : x.stock); }); });
+  }
   var origins = Object.keys(stock);
   var tryFrom = ['CN'].concat(origins.filter(function (c) { return c !== 'CN'; }).sort(function (a, b) { return stock[b] - stock[a]; })).slice(0, 4);
   if (origins.length && !stock.CN) tryFrom.shift();

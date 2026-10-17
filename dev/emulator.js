@@ -74,7 +74,10 @@
   /* ── CJ Dropshipping API mock (only answers when CJ_API_KEY is set in the emulator props) ── */
   const CJ_KEY = 'CJ0000000@api@emulator-key';
   const cjState = () => load(K.cj, { balance: 200, orders: {}, seq: 1 });
-  const cjMockVariant = vid => (/^MOCK-/.test(vid) ? { vid, variantSellPrice: 9.5, variantKey: vid.replace('MOCK-', ''), inventories: [{ countryCode: 'CN', totalInventory: vid.indexOf('SOLDOUT') !== -1 ? 0 : 400 }] } : null);
+  const mockStock = vid => (vid.indexOf('SOLDOUT') !== -1 ? 0 : 400);
+  /* "NOINV" variants come back without stock, like many real CJ variants; the warehouse stock endpoint has it */
+  const cjMockVariant = vid => (/^MOCK-/.test(vid) ? Object.assign({ vid, variantSellPrice: 9.5, variantKey: vid.replace('MOCK-', '') },
+    vid.indexOf('NOINV') !== -1 ? {} : { inventories: [{ countryCode: /USONLY/.test(vid) ? 'US' : 'CN', totalInventory: mockStock(vid) }] }) : null);
   function cjMock(url, opts) {
     const props = Object.assign({}, DEFAULT_PROPS, load(K.props, {}));
     const u = new URL(url);
@@ -93,6 +96,12 @@
       case '/setting/get': return ok({ openId: 42, root: 'GENERAL', isSandbox: false, setting: { qpsLimit: 1 } });
       case '/shopping/pay/getBalance': return ok({ amount: st.balance, noWithdrawalAmount: null, freezeAmount: null });
       case '/product/variant/queryByVid': { const v = cjMockVariant(u.searchParams.get('vid')); return v ? ok(v) : err(1602003, 'Variant removed'); }
+      case '/product/stock/getInventoryByPid':
+        return ok({ inventories: [u.searchParams.get('pid') === 'MOCK-PID-US' ? { countryCode: 'US', totalInventoryNum: 120 } : { countryCode: 'CN', totalInventoryNum: 800 }] });
+      case '/product/stock/queryByVid': {
+        const vid = u.searchParams.get('vid');
+        return /^MOCK-/.test(vid) ? ok([{ countryCode: /USONLY/.test(vid) ? 'US' : 'CN', totalInventoryNum: mockStock(vid) }]) : err(1602003, 'Variant removed');
+      }
       case '/logistic/freightCalculate':
         if ((body.products || []).some(p => /NOSHIP/.test(p.vid))) return ok([]);
         /* a brand-store item stocked only in the US: no route from China */
