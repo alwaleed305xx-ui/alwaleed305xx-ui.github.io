@@ -95,6 +95,8 @@
       case '/product/variant/queryByVid': { const v = cjMockVariant(u.searchParams.get('vid')); return v ? ok(v) : err(1602003, 'Variant removed'); }
       case '/logistic/freightCalculate':
         if ((body.products || []).some(p => /NOSHIP/.test(p.vid))) return ok([]);
+        /* a brand-store item stocked only in the US: no route from China */
+        if (body.startCountryCode === 'CN' && (body.products || []).some(p => /USONLY/.test(p.vid))) return ok([]);
         return ok([{ logisticName: 'CJPacket Sensitive', logisticPrice: 7.1, logisticAging: '10-18' }, { logisticName: 'CJPacket Ordinary', logisticPrice: 6.2, logisticAging: '12-20' }]);
       case '/shopping/order/createOrderV2': {
         for (const f of ['orderNumber', 'shippingCountryCode', 'shippingProvince', 'shippingCity', 'shippingCustomerName', 'shippingAddress', 'logisticName', 'fromCountryCode']) if (!body[f]) return err(1600100, 'Param error: ' + f);
@@ -130,7 +132,9 @@
       }
       case '/product/query':
         return ok({ pid: u.searchParams.get('pid'), productNameEn: 'Women Modest Long Sleeve Maxi Dress', productSku: 'CJMOCK1', bigImage: '', productImageSet: [], productKeyEn: 'Color-Size', productWeight: 380,
-          variants: (u.searchParams.get('pid') === 'MOCK-PID-COLL' ? ['Navy-M', 'Dark Blue-M', 'Black-M'] : ['Black-M', 'Black-L', 'Beige-M']).map(k => ({ vid: 'MOCK-' + k, variantKey: k, variantNameEn: 'Maxi Dress ' + k, variantImage: '', variantSellPrice: 9.5 })) });
+          variants: u.searchParams.get('pid') === 'MOCK-PID-US'
+            ? ['Black-M', 'Black-L'].map(k => ({ vid: 'MOCK-USONLY-' + k, variantKey: k, variantNameEn: 'Abaya ' + k, variantImage: '', variantSellPrice: 14, inventories: [{ countryCode: 'US', totalInventory: 60 }, { countryCode: 'CN', totalInventory: 0 }] }))
+            : (u.searchParams.get('pid') === 'MOCK-PID-COLL' ? ['Navy-M', 'Dark Blue-M', 'Black-M'] : ['Black-M', 'Black-L', 'Beige-M']).map(k => ({ vid: 'MOCK-' + k, variantKey: k, variantNameEn: 'Maxi Dress ' + k, variantImage: '', variantSellPrice: 9.5 })) });
       case '/product/sourcing/create': {
         if (!body.productName || !body.productImage) return err(1600100, 'Param error');
         const sid = String(1000 + st.seq++); st.sourcing = st.sourcing || {}; st.sourcing[sid] = { url: body.productUrl, status: '3' }; put();

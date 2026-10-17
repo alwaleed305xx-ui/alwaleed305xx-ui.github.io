@@ -446,7 +446,7 @@
     const preset = {
       supplier: 'CJ', url: `https://cjdropshipping.com/search/${encodeURIComponent(p.sku || p.pid)}.html`, cost: costSar,
       notes: `${p.name} | SKU ${p.sku || '-'}${ship ? ` | شحن ${ship.name} ${ship.days} يوم $${ship.usd}` : ''}${odd.length ? ' | متغيرات ما انقرت: ' + odd.join(', ') : ''}`,
-      ref: p.pid, variants, logistic: ship ? ship.name : '', from: 'CN',
+      ref: p.pid, variants, logistic: ship ? ship.name : '', from: p.from || 'CN',
     };
     toast(`انجلب ✓ ${colors.size} لون · ${sizes.length} مقاس — اكتب الاسم والوصف بالعربي واحفظ`);
     openEditor(draft, preset);
@@ -492,7 +492,7 @@
     prod.colors.forEach(c => prod.sizes.forEach(z => { if (!variants[c.name + '|' + z]) na.push(c.name + '|' + z); }));
     if (na.length) prod.na = na; else delete prod.na;
     const prev = suppliers[String(prod.id)] || {};
-    suppliers[String(prod.id)] = Object.assign({}, prev, { supplier: 'CJ', ref: cjPid, variants, logistic: ship ? ship.name : '', from: 'CN', cost: costSar || prev.cost,
+    suppliers[String(prod.id)] = Object.assign({}, prev, { supplier: 'CJ', ref: cjPid, variants, logistic: ship ? ship.name : '', from: r.product.from || 'CN', cost: costSar || prev.cost,
       notes: `${prev.notes ? prev.notes + ' | ' : ''}CJ ${cjPid}${prev.url ? ' (كان: ' + prev.url + ')' : ''}` });
     markSup(prod.id);
     saveDraft();

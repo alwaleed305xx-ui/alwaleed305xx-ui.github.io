@@ -1193,15 +1193,31 @@ function cjProduct_(b) {
   var variants = (p.variants || []).map(function (v) {
     return { vid: String(v.vid), key: String(v.variantKey || ''), name: String(v.variantNameEn || ''), image: String(v.variantImage || ''), priceUsd: Number(v.variantSellPrice) || 0 };
   });
-  var shipping = [];
-  if (variants.length) {
-    var fr = cjCall_('post', '/logistic/freightCalculate', { startCountryCode: 'CN', endCountryCode: 'SA', products: [{ vid: variants[0].vid, quantity: 1 }] });
+  /* which warehouses hold stock: brand-store items often sit only in a US/EU warehouse, and a quote from China
+     would then be empty or wrong. China first (usually cheapest), then the other stocked countries. */
+  var stock = {};
+  (p.variants || []).forEach(function (v) {
+    (v.inventories || []).forEach(function (inv) {
+      var c = String(inv.countryCode || '').toUpperCase();
+      var n = Number(inv.totalInventory != null ? inv.totalInventory : inv.stock) || 0;
+      if (/^[A-Z]{2}$/.test(c) && n > 0) stock[c] = (stock[c] || 0) + n;
+    });
+  });
+  var origins = Object.keys(stock);
+  var tryFrom = ['CN'].concat(origins.filter(function (c) { return c !== 'CN'; }).sort(function (a, b) { return stock[b] - stock[a]; })).slice(0, 4);
+  if (origins.length && !stock.CN) tryFrom.shift();
+  var shipping = [], from = tryFrom[0] || 'CN';
+  for (var i = 0; i < tryFrom.length && variants.length && !shipping.length; i++) {
+    var fr = cjCall_('post', '/logistic/freightCalculate', { startCountryCode: tryFrom[i], endCountryCode: 'SA', products: [{ vid: variants[0].vid, quantity: 1 }] });
     /* tax/clearance are what CJ itself charges on top of postage for the route (0 when the carrier collects VAT on delivery) */
-    if (fr.ok && Array.isArray(fr.data)) shipping = fr.data.map(function (x) { return { name: String(x.logisticName), usd: Number(x.logisticPrice) || 0, days: String(x.logisticAging || ''),
-      taxUsd: Number(x.taxesFee) || 0, clearUsd: Number(x.clearanceOperationFee) || 0, totalUsd: Number(x.totalPostageFee) || 0 }; });
+    if (fr.ok && Array.isArray(fr.data) && fr.data.length) {
+      from = tryFrom[i];
+      shipping = fr.data.map(function (x) { return { name: String(x.logisticName), usd: Number(x.logisticPrice) || 0, days: String(x.logisticAging || ''),
+        taxUsd: Number(x.taxesFee) || 0, clearUsd: Number(x.clearanceOperationFee) || 0, totalUsd: Number(x.totalPostageFee) || 0 }; });
+    }
   }
   return { ok: true, product: { pid: String(p.pid || pid), name: String(p.productNameEn || ''), sku: String(p.productSku || ''), images: imgs.slice(0, 10),
-    optionNames: String(p.productKeyEn || ''), weight: Number(p.productWeight) || 0, variants: variants, shipping: shipping } };
+    optionNames: String(p.productKeyEn || ''), weight: Number(p.productWeight) || 0, variants: variants, shipping: shipping, from: from, stock: stock } };
 }
 
 /* Ask CJ's agents to find products that are linked to another supplier (e.g. an AliExpress URL).
