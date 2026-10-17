@@ -742,7 +742,12 @@ function fulfillOrder_(orderId, source, opts) {
     if (!ctx) fail_('order_not_found');
     var st = String(ctx.order.status), ss = String(ctx.order.supplierStatus || '');
     var info = parseJson_(ctx.order.supplierInfo) || {};
-    if (['ordered', 'shipped', 'delivered'].indexOf(ss) !== -1) return { ok: true, already: true, supplierStatus: ss, supplierRef: String(ctx.order.supplierRef || '') };
+    /* an order only checked in test mode can be bought for real by the owner once test mode is off */
+    var cjKeys = Object.keys(info.cj || {});
+    var testOnly = cjKeys.length > 0 && cjKeys.every(function (k) { return info.cj[k].test; });
+    var buyForReal = testOnly && source === 'admin' && prop_('CJ_SANDBOX') !== '1';
+    if (['ordered', 'shipped', 'delivered'].indexOf(ss) !== -1 && !buyForReal) return { ok: true, already: true, supplierStatus: ss, supplierRef: String(ctx.order.supplierRef || '') };
+    if (buyForReal) { info.tests = info.cj; info.cj = {}; }
     /* COD orders go to CJ only when the owner sends them (cash isn't collected yet); after that the queue may retry them */
     var cod = st === 'new' && String(ctx.order.payment) === 'cod' && (source === 'admin' || ss !== '');
     if (!(st === 'paid' || st === 'processing' || cod)) fail_('order_not_paid');
@@ -857,9 +862,17 @@ function placeCjOrders_(o, opts) {
       var paidSar = sub > 0 ? g.revenueSar * ((Number(o.total) || 0) - (Number(o.codFee) || 0)) / sub : g.revenueSar;
       var costSar = (goodsUsd + (Number(opt.logisticPrice) || 0)) * USD_SAR;
       if (paidSar > 0 && costSar > paidSar && !opts.force) { failure = 'margin_guard cost ' + round2_(costSar) + ' SAR > paid ' + round2_(paidSar) + ' SAR'; hold = true; return; }
+      if (sandbox) {
+        /* test mode is a dry run: CJ honours isSandbox only on special sandbox accounts (a normal account may treat
+           it as a real order), so nothing is created at CJ — stock, shipping and the price check above are real */
+        info.cj[from] = { orderNumber: number, orderId: 'TEST-' + number, logistic: opt.logisticName, days: String(opt.logisticAging || ''),
+          shipUsd: Number(opt.logisticPrice) || 0, amountUsd: round2_(goodsUsd + (Number(opt.logisticPrice) || 0)), status: 'TEST', test: true, paid: true,
+          vids: g.products.map(function (p) { return p.vid; }) };
+        saveCjProgress_(o.orderId, info.cj);
+        return;
+      }
       var body = Object.assign({ orderNumber: number, logisticName: opt.logisticName, fromCountryCode: from, payType: 2,
         remark: 'Sora Fashion ' + o.orderId, products: g.products }, cjAddress_(o));
-      if (sandbox) body.isSandbox = 1;
       var cr = cjCall_('post', '/shopping/order/createOrderV2', body);
       if (!cr.ok && cr.code === 1603003) {
         var ex = cjCall_('get', '/shopping/order/getOrderDetail', null, { orderId: number });
@@ -883,7 +896,7 @@ function placeCjOrders_(o, opts) {
     var d = cjCall_('get', '/shopping/order/getOrderDetail', null, { orderId: rec.orderId || number });
     var status = d.ok && d.data ? String(d.data.orderStatus || '') : rec.status;
     if (d.ok && d.data && d.data.orderId) rec.orderId = String(d.data.orderId);
-    if (!sandbox && ['CREATED', 'IN_CART', 'UNPAID'].indexOf(status) !== -1) {
+    if (['CREATED', 'IN_CART', 'UNPAID'].indexOf(status) !== -1) {
       var pay = cjPayExisting_(rec.orderId, status);
       if (!pay.ok) {
         if (pay.code === 1604000 || pay.code === 1604001) low = true;
@@ -894,7 +907,7 @@ function placeCjOrders_(o, opts) {
       status = 'UNSHIPPED';
     }
     rec.status = status;
-    rec.paid = sandbox || ['UNSHIPPED', 'SHIPPED', 'DELIVERED'].indexOf(status) !== -1;
+    rec.paid = ['UNSHIPPED', 'SHIPPED', 'DELIVERED'].indexOf(status) !== -1;
     if (!rec.paid && !failure) failure = 'cj order still ' + (status || 'unknown');
   });
   var done = order.every(function (k) { return info.cj[k] && info.cj[k].paid; });
@@ -1025,7 +1038,8 @@ function syncCjOrder_(orderId, snap) {
   if (!order) { var c0 = findOrder_(orderId); if (!c0) return; order = c0.order; }
   var ctx = { order: order };
   var info = parseJson_(ctx.order.supplierInfo) || {};
-  var parts = Object.keys(info.cj || {});
+  /* test-mode orders were never created at CJ: nothing to sync */
+  var parts = Object.keys(info.cj || {}).filter(function (k) { return !info.cj[k].test; });
   if (!parts.length) return;
   var shipped = 0, delivered = 0, cancelled = 0, numbers = [], carriers = [], url = '';
   parts.forEach(function (k) {
@@ -1110,6 +1124,14 @@ function cjDailyCheck() {
   var b = cjCall_('get', '/shopping/pay/getBalance');
   var min = Number(prop_('CJ_MIN_BALANCE_USD') || 25);
   if (b.ok && b.data && Number(b.data.amount) < min) problems.push('رصيد محفظة CJ ' + b.data.amount + '$ — أقل من ' + min + '$. اشحنه من My CJ ← Wallet عشان تمشي الطلبات تلقائي.');
+  /* test mode only checks orders: a real customer's paid order would wait forever */
+  if (prop_('CJ_SANDBOX') === '1') {
+    var all = readAll_(sheet_(SHEET_ORDERS, ORDER_HEADERS));
+    var tested = all.rows.map(function (r) { return toObj_(all.headers, r, 0); })
+      .filter(function (o) { return /^TEST-/.test(String(o.supplierRef || '')) && ['processing', 'paid'].indexOf(String(o.status)) !== -1; });
+    if (tested.length) problems.push('وضع التجربة شغّال: ' + tested.length + ' طلب انفحص مع CJ بس وما انطلب فعلياً (' + tested.slice(0, 5).map(function (o) { return o.orderId; }).join('، ') +
+      '). إذا خلصت التجربة: ⚙️ Sora ← «3) تشغيل CJ الحقيقي»، وبعدها من لوحة التحكم اضغط «اطلبه فعلياً من CJ» على الطلبات الحقيقية.');
+  }
   if (problems.length) mailOwnerText_('تنبيه CJ', problems);
   return { ok: !problems.length, problems: problems };
 }
@@ -1124,7 +1146,7 @@ function cjStatus_() {
 
 /* admin product search (50 CJ points per call) */
 function cjSearch_(b) {
-  var r = cjCall_('get', '/product/listV2', null, { keyWord: str_(b.keyword, 80), page: Math.max(1, Math.min(50, Number(b.page) || 1)), size: 20 });
+  var r = cjCall_('get', '/product/listV2', null, { keyWord: str_(b.keyword, 80), page: Math.max(1, Math.min(50, Number(b.page) || 1)), size: Math.max(10, Math.min(100, Number(b.size) || 20)) });
   if (!r.ok) fail_('cj_' + r.code);
   var content = (r.data && r.data.content) || [];
   var list = [];
@@ -1148,7 +1170,9 @@ function cjProduct_(b) {
   var shipping = [];
   if (variants.length) {
     var fr = cjCall_('post', '/logistic/freightCalculate', { startCountryCode: 'CN', endCountryCode: 'SA', products: [{ vid: variants[0].vid, quantity: 1 }] });
-    if (fr.ok && Array.isArray(fr.data)) shipping = fr.data.map(function (x) { return { name: String(x.logisticName), usd: Number(x.logisticPrice) || 0, days: String(x.logisticAging || '') }; });
+    /* tax/clearance are what CJ itself charges on top of postage for the route (0 when the carrier collects VAT on delivery) */
+    if (fr.ok && Array.isArray(fr.data)) shipping = fr.data.map(function (x) { return { name: String(x.logisticName), usd: Number(x.logisticPrice) || 0, days: String(x.logisticAging || ''),
+      taxUsd: Number(x.taxesFee) || 0, clearUsd: Number(x.clearanceOperationFee) || 0, totalUsd: Number(x.totalPostageFee) || 0 }; });
   }
   return { ok: true, product: { pid: String(p.pid || pid), name: String(p.productNameEn || ''), sku: String(p.productSku || ''), images: imgs.slice(0, 10),
     optionNames: String(p.productKeyEn || ''), weight: Number(p.productWeight) || 0, variants: variants, shipping: shipping } };
@@ -1372,7 +1396,7 @@ function soraConnectCj() {
   var s = cjStatus_();
   if (!s.connected) { say_('✗ ما اتصل بـ CJ', 'السبب: ' + s.error + '\nتأكد من المفتاح (وإن تطبيق API مثبّت في CJ) وجرّب مرة ثانية.'); return; }
   say_('✓ CJ متصل', 'رصيد المحفظة: ' + s.balanceUsd + '$\n' +
-    (s.sandbox ? 'الوضع الحالي: تجربة — الطلبات تنرسل لـ CJ كتجربة، ما ينخصم شي وما تنشحن.\nبعد ما تجرب طلب كامل من المتجر: ⚙️ Sora ← «3) تشغيل CJ الحقيقي».' : 'الوضع: حقيقي — الطلبات المدفوعة تنطلب وتنشحن تلقائياً.'));
+    (s.sandbox ? 'الوضع الحالي: تجربة — كل طلب مدفوع ينفحص مع CJ (المخزون وخط الشحن والتكلفة) بدون ما ينطلب فعلياً: ما ينخصم شي وما ينشحن شي.\nبعد ما تجرب طلب كامل من المتجر: ⚙️ Sora ← «3) تشغيل CJ الحقيقي».' : 'الوضع: حقيقي — الطلبات المدفوعة تنطلب وتنشحن تلقائياً.'));
 }
 
 function soraCjLive() {

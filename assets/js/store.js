@@ -89,8 +89,13 @@
     return [...new Set(all)];
   };
   const svgFor = (p, colorName) => window.Garment.svg(p.type, S.colorOf(p, colorName).hex, { label: p.name, accent: p.accent });
-  /* Trendyol's CDN serves resized copies; AliExpress sized copies are refused off-site, so those stay full size */
-  S.thumb = (src, w) => (w && /^https:\/\/cdn\.dsmcdn\.com\/(?!mnresize\/)/.test(src) ? src.replace('https://cdn.dsmcdn.com/', `https://cdn.dsmcdn.com/mnresize/${w}/-/`) : src);
+  /* Trendyol's and CJ's CDNs serve resized copies; AliExpress sized copies are refused off-site, so those stay full size */
+  S.thumb = (src, w) => {
+    if (!w) return src;
+    if (/^https:\/\/cdn\.dsmcdn\.com\/(?!mnresize\/)/.test(src)) return src.replace('https://cdn.dsmcdn.com/', `https://cdn.dsmcdn.com/mnresize/${w}/-/`);
+    if (/^https:\/\/((oss-)?cf\.cjdropshipping\.com|cj-product-center\.oss-accelerate\.aliyuncs\.com)\/[^?#]+$/.test(src)) return `${src}?x-oss-process=image/resize,w_${w}`;
+    return src;
+  };
   /* a resized photo that fails retries at full size; a full-size failure falls back to the illustration */
   S.imgFail = img => {
     if (img.dataset.full) { const full = img.dataset.full; delete img.dataset.full; img.src = full; return; }

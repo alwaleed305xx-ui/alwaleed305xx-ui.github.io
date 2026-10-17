@@ -166,13 +166,16 @@
     const canSend = ['paid', 'processing', 'new'].includes(o.status) && !['ordered', 'shipped', 'delivered', 'ordering'].includes(o.supplierStatus || '') && !handledByHand(o);
     const marginHold = o.supplierStatus === 'hold' && /^margin_guard/.test(info.lastError || '');
     const tone = ss ? (manualOpen(o) && ss[1] === 'ok' ? 'warn' : ss[1]) : (handledByHand(o) ? 'ok' : 'warn');
-    const supStrip = (ss || canSend || handledByHand(o)) ? `<div class="sup-strip ${tone}">
-        <b>${ss ? ss[0] : handledByHand(o) ? 'انطلب يدوي ✓' : 'ما انرسل لـ CJ'}</b>
+    /* test mode only checks the order with CJ — nothing was bought */
+    const testRun = cjParts.length > 0 && cjParts.every(c => c.test);
+    const supStrip = (ss || canSend || handledByHand(o)) ? `<div class="sup-strip ${testRun ? 'info' : tone}">
+        <b>${testRun ? 'تجربة ✓ — انفحص مع CJ وما انطلب فعلياً' : ss ? ss[0] : handledByHand(o) ? 'انطلب يدوي ✓' : 'ما انرسل لـ CJ'}</b>
         ${cjParts.map(c => `<span class="mini" dir="ltr">CJ ${esc(c.orderId || c.orderNumber)} · ${esc(c.logistic || '')}${c.days ? ' · ' + esc(c.days) + ' days' : ''}${c.amountUsd ? ' · $' + esc(c.amountUsd) : ''}${c.status ? ' · ' + esc(c.status) : ''}</span>`).join('')}
         ${info.lastError ? `<span class="mini">السبب: <span dir="ltr">${esc(info.lastError)}</span></span>` : ''}
         ${(info.manual || []).length ? `<span class="mini">${info.manualHandled ? 'انطلب يدوي ✓: ' : 'يحتاج طلب يدوي: '}${info.manual.map(m => esc(m.name + ' (' + m.color + ' / ' + m.size + ' × ' + m.qty + ')')).join('، ')}</span>` : ''}
         ${manualOpen(o) ? `<button class="btn btn-ghost btn-sm" data-mdone="${esc(o.orderId)}">تم الطلب اليدوي</button>` : ''}
         ${canSend ? `<button class="btn btn-dark btn-sm" data-ful="${esc(o.orderId)}">إرسال لـ CJ الآن</button>` : ''}
+        ${testRun && ['paid', 'processing', 'new'].includes(o.status) ? `<button class="btn btn-ghost btn-sm" data-ful="${esc(o.orderId)}" title="بعد «تشغيل CJ الحقيقي» من الجدول">اطلبه فعلياً من CJ</button>` : ''}
         ${marginHold ? `<button class="btn btn-ghost btn-sm" data-force="${esc(o.orderId)}">اشترِ رغم الخسارة</button>` : ''}
       </div>` : '';
     return `<article class="order" id="o-${esc(o.orderId)}">
@@ -236,7 +239,9 @@
     let res;
     try { res = await api('fulfillOrder', { orderId: id, force: !!force }); } catch (e) { res = { ok: false, error: e.message }; }
     const msg = { cj_not_configured: 'مفتاح CJ مو مضاف في السيرفر (CJ_API_KEY)', order_not_paid: 'الطلب مو مدفوع', cj_auth_failed: 'مفتاح CJ غلط أو موقوف' };
-    toast(res.ok ? (res.already ? 'الطلب مرسل لـ CJ من قبل ✓' : 'انطلب من CJ وانْدفع ✓') : 'ما انرسل — ' + (msg[res.error] || (SUP_STATUS[res.supplierStatus] || [res.error || ''])[0]));
+    const testRef = /^TEST-/.test(res.supplierRef || '');
+    toast(res.ok ? (testRef ? (res.already ? 'وضع التجربة شغّال — شغّل «3) تشغيل CJ الحقيقي» من الجدول أول' : 'تجربة ✓ — انفحص مع CJ وما انطلب فعلياً')
+      : res.already ? 'الطلب مرسل لـ CJ من قبل ✓' : 'انطلب من CJ وانْدفع ✓') : 'ما انرسل — ' + (msg[res.error] || (SUP_STATUS[res.supplierStatus] || [res.error || ''])[0]));
     await refreshOrders();
   }
   function copy(text) {
