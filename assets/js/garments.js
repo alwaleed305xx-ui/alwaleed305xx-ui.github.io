@@ -201,6 +201,16 @@
         fold('M126,130 C118,160 106,190 94,214', p), fold('M174,130 C182,160 194,190 206,214', p),
       ].join('');
     },
+    handbag(p, g) {
+      return [
+        `<path d="M112,168 C112,104 188,104 188,168" fill="none" stroke="${p.dark}" stroke-width="9" stroke-linecap="round"/>`,
+        fill('M78,170 L222,170 L236,330 Q236,346 220,346 L80,346 Q64,346 64,330 Z', `url(#${g})`),
+        fill('M78,170 L222,170 L224,196 L76,196 Z', p.dark),
+        `<rect x="138" y="190" width="24" height="20" rx="4" fill="${p.accent}"/>`,
+        fold('M96,214 L88,330', p, 1.2), fold('M204,214 L212,330', p, 1.2),
+        `<path d="M92,226 L84,320" fill="none" stroke="${p.sheen}" stroke-width="8" stroke-linecap="round" opacity=".35"/>`,
+      ].join('');
+    },
     hijab(p, g) {
       return [
         fill('M96,58 L204,58 C210,150 216,232 220,292 Q186,322 150,314 Q114,322 80,292 C84,232 90,150 96,58 Z', `url(#${g})`, 'fill-opacity=".95"'),
@@ -243,7 +253,7 @@
   const TYPES = {
     maxi: 'فستان ماكسي', wrap: 'فستان لف', gown: 'فستان سهرة', abaya: 'عباية', kaftan: 'جلابية / قفطان',
     leggings: 'ليقنز', bra: 'توب رياضي', set: 'طقم رياضي', modestset: 'طقم رياضي محتشم', lounge: 'طقم هودي',
-    pajama: 'بيجامة ساتان', isdal: 'إسدال صلاة', hijab: 'طرحة / حجاب', tunic: 'توب رياضي طويل',
+    pajama: 'بيجامة ساتان', isdal: 'إسدال صلاة', hijab: 'طرحة / حجاب', tunic: 'توب رياضي طويل', handbag: 'إكسسوار / شنطة',
   };
 
   function hangerMarkup() {
