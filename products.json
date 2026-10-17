@@ -9,7 +9,7 @@
     "returnsDays": 7,
     "codEnabled": false,
     "codFee": 15,
-    "ordersEndpoint": "",
+    "ordersEndpoint": "https://script.google.com/macros/s/AKfycbyxX_lyHKXZaUhNr0iE4nSoVaQ5cxMIHzhH-VFfePOBFMNb_LqfSAR5lAs_qUmkKDDw/exec",
     "moyasarPublishableKey": "",
     "contact": {
       "email": "",
