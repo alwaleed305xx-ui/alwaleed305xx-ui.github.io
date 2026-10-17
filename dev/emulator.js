@@ -119,6 +119,15 @@
       case '/logistic/trackInfo': { const n = u.searchParams.get('trackNumber'); return ok([{ trackingNumber: n, trackingStatus: 'In transit', lastMileCarrier: 'SMSA', lastTrackNumber: 'SMSA' + n.slice(-8) }]); }
       case '/product/listV2':
         return ok({ totalRecords: 2, content: [{ productList: [{ id: 'MOCK-PID-1', nameEn: 'Women Modest Long Sleeve Maxi Dress', bigImage: '', sellPrice: '9.50', listedNum: 120, warehouseInventoryNum: 800 }, { id: 'MOCK-PID-2', nameEn: 'Women Abaya Open Front Kimono', bigImage: '', sellPrice: '12.40', listedNum: 60, warehouseInventoryNum: 300 }, { id: 'MOCK-PID-COLL', nameEn: 'Blue Tones Dress', bigImage: '', sellPrice: '9.50', listedNum: 5, warehouseInventoryNum: 90 }] }] });
+      case '/product/myProduct/query': {
+        /* two pages of the owner's "My Products"; a page past the end repeats page 1 (CJ ignores unknown paging params) */
+        const page = Number(u.searchParams.get('pageNum')) || 1;
+        const all = [{ productId: 'MOCK-PID-1', nameEn: 'Women Modest Long Sleeve Maxi Dress', sku: 'CJMOCK1', bigImage: '', sellPrice: '9.50', createAt: '2026-10-17' },
+          { productId: 'MOCK-PID-2', nameEn: 'Women Abaya Open Front Kimono', sku: 'CJMOCK2', bigImage: '', sellPrice: '12.40', createAt: '2026-10-17' },
+          { productId: 'MOCK-PID-COLL', nameEn: 'Blue Tones Dress', sku: 'CJMOCK3', bigImage: '', sellPrice: '9.50', createAt: '2026-10-17' }];
+        const content = page === 2 ? all.slice(2) : all.slice(0, 2);
+        return ok({ pageSize: 2, pageNumber: page, totalRecords: 3, totalPages: 2, content });
+      }
       case '/product/query':
         return ok({ pid: u.searchParams.get('pid'), productNameEn: 'Women Modest Long Sleeve Maxi Dress', productSku: 'CJMOCK1', bigImage: '', productImageSet: [], productKeyEn: 'Color-Size', productWeight: 380,
           variants: (u.searchParams.get('pid') === 'MOCK-PID-COLL' ? ['Navy-M', 'Dark Blue-M', 'Black-M'] : ['Black-M', 'Black-L', 'Beige-M']).map(k => ({ vid: 'MOCK-' + k, variantKey: k, variantNameEn: 'Maxi Dress ' + k, variantImage: '', variantSellPrice: 9.5 })) });

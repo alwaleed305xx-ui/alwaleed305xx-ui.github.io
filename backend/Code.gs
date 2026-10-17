@@ -95,6 +95,7 @@ function handle_(body) {
       case 'cjProduct': requireAdmin_(body); return cjProduct_(body);
       case 'cjSourcingCreate': requireAdmin_(body); return cjSourcingCreate_(body);
       case 'cjSourcingStatus': requireAdmin_(body); return cjSourcingStatus_();
+      case 'cjMyProducts': requireAdmin_(body); return cjMyProducts_();
       default: return { ok: false, error: 'unknown_action' };
     }
   } catch (err) {
@@ -1155,6 +1156,28 @@ function cjSearch_(b) {
   var list = [];
   content.forEach(function (c) { (c.productList || []).forEach(function (p) { list.push({ pid: String(p.id), name: String(p.nameEn || ''), image: String(p.bigImage || ''), priceUsd: String(p.sellPrice || ''), listed: Number(p.listedNum) || 0, stock: Number(p.warehouseInventoryNum) || 0 }); }); });
   return { ok: true, total: r.data ? Number(r.data.totalRecords) || list.length : list.length, list: list };
+}
+
+/* the owner's own picks: everything added to "My Products" on cjdropshipping.com (no points cost listed).
+   CJ doesn't document paging params for this call, so both spellings are sent and repeats end the loop. */
+function cjMyProducts_() {
+  var out = [], seen = {};
+  for (var page = 1; page <= 20; page++) {
+    var r = cjCall_('get', '/product/myProduct/query', null, { pageNum: page, pageSize: 100, page: page, size: 100 });
+    if (!r.ok) { if (page === 1) fail_('cj_' + r.code); break; }
+    var d = r.data || {}, list = d.content || d.list || [];
+    var added = 0;
+    list.forEach(function (p) {
+      var pid = String(p.productId || p.pid || '');
+      if (!pid || seen[pid]) return;
+      seen[pid] = 1;
+      added++;
+      out.push({ pid: pid, name: String(p.nameEn || p.productNameEn || ''), sku: String(p.sku || ''), image: String(p.bigImage || p.productImage || ''),
+        priceUsd: String(p.sellPrice || ''), addedAt: String(p.createAt || '') });
+    });
+    if (!added || page >= (Number(d.totalPages) || 1)) break;
+  }
+  return { ok: true, total: out.length, list: out };
 }
 
 /* admin product detail + Saudi shipping quote (≈20 CJ points) — the admin panel turns it into a product */

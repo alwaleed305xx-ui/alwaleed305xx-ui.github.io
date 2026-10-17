@@ -341,22 +341,40 @@
     const card = $('#editorCard');
     card.innerHTML = `
       <div class="modal-head"><h3>استيراد منتج من CJ</h3><button class="icon-btn" data-x>✕</button></div>
-      <div class="row"><input class="input" id="cjq" placeholder="ابحث بالإنجليزي: abaya, modest maxi dress, prayer dress…" dir="ltr" style="flex:1;min-width:220px">
+      <div class="row"><input class="input" id="cjq" placeholder="ابحث بالإنجليزي، أو الصق رابط منتج من CJ" dir="ltr" style="flex:1;min-width:220px">
         <select class="select" id="cjcat" style="max-width:200px">${data.cats.map(c => `<option value="${esc(c.id)}">${esc(c.name)}</option>`).join('')}</select>
-        <button class="btn btn-dark btn-sm" id="cjgo">بحث</button></div>
-      <p class="help">كل بحث يصرف 50 نقطة من رصيد CJ اليومي (50,000 نقطة). اختر قطعة ← نجيب صورها وألوانها ومقاساتها وسعر الشحن للسعودية، ونربط كل لون ومقاس بـ CJ تلقائياً عشان الطلبات تمشي بدون تدخّل.</p>
+        <button class="btn btn-dark btn-sm" id="cjgo">بحث</button>
+        <button class="btn btn-ghost btn-sm" id="cjmine" title="القطع اللي ضفتها في CJ بزر Add to My Products">منتجاتي في CJ</button></div>
+      <p class="help">اختر من موقع CJ (مثلاً قسم Brands) واضغط على القطعة <b>Add to My Products</b>، وبعدها «منتجاتي في CJ» هنا — أو الصق رابط القطعة مباشرة. نجيب صورها وألوانها ومقاساتها وسعر الشحن للسعودية، ونربط كل لون ومقاس بـ CJ تلقائياً عشان الطلبات تمشي بدون تدخّل. (كل بحث يصرف 50 نقطة من رصيد CJ اليومي.)</p>
       <div class="cj-results" id="cjres"></div>`;
     $$('[data-x]', card).forEach(b => { b.onclick = closeEditor; });
+    const imported = new Set(Object.values(suppliers).map(s => s && s.ref).filter(Boolean));
+    const show = (r, empty) => {
+      if (!r.ok) { $('#cjres').innerHTML = `<p class="sup-missing">${r.error === 'cj_not_configured' ? 'أضف CJ_API_KEY في إعدادات السيرفر أول.' : 'تعذر — ' + esc(r.error)}</p>`; return; }
+      const thumb = u => (/^https:\/\/((oss-)?cf\.cjdropshipping\.com|cj-product-center\.oss-accelerate\.aliyuncs\.com)\/[^?#]+$/.test(u) ? u + '?x-oss-process=image/resize,w_200' : u);
+      $('#cjres').innerHTML = r.list.length ? r.list.map(p => `<div class="cj-item">${p.image ? `<img src="${esc(thumb(p.image))}" alt="" loading="lazy" referrerpolicy="no-referrer">` : ''}
+        <div><span dir="ltr">${esc(p.name)}</span><b>$${esc(p.priceUsd)}</b>${p.stock != null ? `<span class="mini">مخزون ${p.stock} · مضاف في ${p.listed} متجر</span>` : ''}
+        ${imported.has(p.pid) ? '<span class="mini">موجودة في المتجر ✓</span>' : `<button class="btn btn-plum btn-sm" data-cjpid="${esc(p.pid)}">إضافة للمتجر</button>`}</div></div>`).join('') : `<p class="mini">${empty}</p>`;
+    };
     const run = async () => {
       const q = $('#cjq').value.trim();
       if (!q) return;
+      /* a pasted CJ product link (…-p-<id>.html) or a bare product id goes straight to the import */
+      const m = q.match(/-p-([0-9A-Za-z-]{16,})\.html/) || q.match(/^([0-9]{17,20}|[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12})$/i);
+      if (m) {
+        $('#cjres').innerHTML = `<div class="cj-item"><div><span dir="ltr">${esc(m[1])}</span><button class="btn btn-plum btn-sm" data-cjpid="${esc(m[1])}">إضافة للمتجر</button></div></div>`;
+        return;
+      }
       $('#cjres').innerHTML = '<p class="mini">جاري البحث…</p>';
       let r;
       try { r = await api('cjSearch', { keyword: q }); } catch (e) { r = { ok: false, error: e.message }; }
-      if (!r.ok) { $('#cjres').innerHTML = `<p class="sup-missing">${r.error === 'cj_not_configured' ? 'أضف CJ_API_KEY في إعدادات السيرفر أول.' : 'تعذر البحث — ' + esc(r.error)}</p>`; return; }
-      $('#cjres').innerHTML = r.list.length ? r.list.map(p => `<div class="cj-item">${p.image ? `<img src="${esc(p.image)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : ''}
-        <div><span dir="ltr">${esc(p.name)}</span><b>$${esc(p.priceUsd)}</b><span class="mini">مخزون ${p.stock} · مضاف في ${p.listed} متجر</span>
-        <button class="btn btn-plum btn-sm" data-cjpid="${esc(p.pid)}">إضافة للمتجر</button></div></div>`).join('') : '<p class="mini">ما فيه نتائج — جرب كلمة ثانية.</p>';
+      show(r, 'ما فيه نتائج — جرب كلمة ثانية.');
+    };
+    $('#cjmine').onclick = async () => {
+      $('#cjres').innerHTML = '<p class="mini">جاري جلب منتجاتك من CJ…</p>';
+      let r;
+      try { r = await api('cjMyProducts'); } catch (e) { r = { ok: false, error: e.message }; }
+      show(r, 'ما فيه منتجات في My Products — افتح القطعة في موقع CJ واضغط Add to My Products.');
     };
     $('#cjgo').onclick = run;
     $('#cjq').onkeydown = ev => { if (ev.key === 'Enter') run(); };
