@@ -274,10 +274,13 @@
   };
 
   /* ───── layout: header / footer / drawer ───── */
-  const NAV = [
-    ['index.html#new', 'جديدنا'], ['index.html?cat=dresses#catalog', 'فساتين'], ['index.html?cat=abayas#catalog', 'عبايات'],
-    ['index.html?cat=sport#catalog', 'رياضي'], ['index.html?cat=lounge#catalog', 'لاونج'], ['index.html?cat=hijab#catalog', 'طرح'],
+  const NAV_ITEMS = [
+    ['index.html#new', 'جديدنا'], ['index.html?cat=dresses#catalog', 'فساتين', 'dresses'], ['index.html?cat=abayas#catalog', 'عبايات', 'abayas'],
+    ['index.html?cat=sport#catalog', 'رياضي', 'sport'], ['index.html?cat=swim#catalog', 'بكيني', 'swim'], ['index.html?cat=hijab#catalog', 'طرح', 'hijab'],
   ];
+  /* a section link only shows while that section has products on sale */
+  const navLinks = () => NAV_ITEMS.filter(([, , cat]) => !cat || S.products.some(p => p.cat === cat))
+    .map(([h, t]) => `<a href="${h}">${t}</a>`).join('');
 
   function renderHeader() {
     const el = $('#site-header');
@@ -291,7 +294,7 @@
           <div class="nav-wrap">
             <button class="icon-btn burger" id="burger" aria-label="القائمة">${I.menu}</button>
             <nav class="nav" id="nav" aria-label="الأقسام">
-              ${NAV.map(([h, t]) => `<a href="${h}">${t}</a>`).join('')}
+              ${navLinks()}
             </nav>
           </div>
           <a class="logo" href="index.html" aria-label="Sora Fashion"><span class="logo-word">SORA</span><span class="logo-sub">FASHION</span></a>
@@ -371,7 +374,7 @@
       <div class="overlay" id="overlay"></div>
       <nav class="mnav" id="mnav" aria-label="القائمة" aria-hidden="true">
         <div class="mnav-head"><span class="logo-word" style="font-size:1.3rem">SORA</span><button class="icon-btn" id="navClose" aria-label="إغلاق">${I.close}</button></div>
-        ${NAV.map(([h, t]) => `<a href="${h}">${t}</a>`).join('')}
+        ${navLinks()}
         <a href="track.html">تتبّع طلبك</a>
         <a href="policies.html">السياسات</a>
       </nav>
