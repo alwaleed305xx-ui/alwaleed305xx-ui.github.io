@@ -28,6 +28,7 @@
     bag: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M5 8h14l-1.2 12.1a1 1 0 0 1-1 .9H7.2a1 1 0 0 1-1-.9L5 8Z"/><path d="M9 8V6.5a3 3 0 0 1 6 0V8" stroke-linecap="round"/></svg>',
     menu: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h10"/></svg>',
     close: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>',
+    plane: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M10.2 13.8 3 11.5l1.4-1.4 8.1.9 4.3-4.3c.8-.8 2.2-.9 2.9-.2s.6 2.1-.2 2.9l-4.3 4.3.9 8.1-1.4 1.4-2.3-7.2-3.4 3.1.3 2.4-1 1-1.3-3-3-1.3 1-1 2.4.3z"/></svg>',
     truck: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M2.5 6.5h11v9h-11zM13.5 9.5h4l3 3v3h-7"/><circle cx="6.5" cy="17" r="1.8"/><circle cx="17" cy="17" r="1.8"/></svg>',
     shield: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M12 3 4.5 6v5.5c0 4.6 3.2 8.3 7.5 9.5 4.3-1.2 7.5-4.9 7.5-9.5V6L12 3Z"/><path d="m8.8 12 2.2 2.2 4.3-4.4" stroke-linecap="round"/></svg>',
     swap: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h13l-3-3M20 16H7l3 3"/></svg>',
@@ -123,6 +124,10 @@
 
   /* delivery window: a product may ship faster than the store default ("7-14" vs "15-30") */
   const parseDays = s => { const m = String(s || '').match(/(\d+)\s*-\s*(\d+)/); return m ? [Number(m[1]), Number(m[2])] : null; };
+  /* every product ships to the customer from a supplier warehouse outside Saudi Arabia */
+  const ORIGIN_AR = { CN: 'الصين', US: 'أمريكا', GB: 'بريطانيا', DE: 'ألمانيا', FR: 'فرنسا', ES: 'إسبانيا', IT: 'إيطاليا', TR: 'تركيا', TH: 'تايلاند', VN: 'فيتنام', ID: 'إندونيسيا', AU: 'أستراليا', CA: 'كندا', MX: 'المكسيك', BR: 'البرازيل', JP: 'اليابان', KR: 'كوريا' };
+  S.originOf = p => (p && ORIGIN_AR[p.shipsFrom]) || '';
+  S.originText = p => (S.originOf(p) ? 'من ' + S.originOf(p) : 'من خارج السعودية');
   S.shipDaysOf = p => (p && parseDays(p.shipDays) ? p.shipDays : S.config.shippingDays);
   /* an order arrives with its slowest piece */
   S.shipWindow = lines => {
@@ -268,7 +273,7 @@
         <a class="p-name" href="${S.productUrl(p)}">${esc(p.name)}</a>
         <div class="p-price"><span class="price">${money(p.price)}</span>${off ? `<span class="price-old">${fmt(p.old)}</span><span class="price-off" dir="ltr">-${off}%</span>` : ''}</div>
         ${sw ? `<div class="swatches-mini">${sw}</div>` : ''}
-        ${p.shipDays && S.shipDaysOf(p) !== S.config.shippingDays ? `<div class="p-ship">${I.truck}<span>توصيل ${esc(p.shipDays)} يوم</span></div>` : ''}
+        <div class="p-ship">${I.plane}<span>يُشحن من الخارج · ${esc(S.shipDaysOf(p))} يوم</span></div>
       </div>
     </article>`;
   };
@@ -431,6 +436,7 @@
       <div class="sum-row"><span>المجموع</span><b>${moneyText(t.subtotal)}</b></div>
       <div class="sum-row"><span>الشحن</span><span>${t.shipping ? moneyText(t.shipping) : 'مجاني'}</span></div>
       <div class="sum-row total"><span>الإجمالي</span><span>${moneyText(t.total)}</span></div>
+      <p class="origin-note">${I.plane}<span>طلبك يُشحن لك من مستودعات خارج السعودية — يوصلك خلال <b><bdi dir="ltr">${esc(S.shipWindow(lines))}</bdi> يوم</b> مع رقم تتبّع.</span></p>
       <a class="btn btn-plum btn-block" href="checkout.html">إتمام الطلب</a>
       <p class="drawer-note">${I.lock.replace('<svg', '<svg style="width:13px;height:13px;display:inline;vertical-align:-2px"')} دفع آمن · كود الخصم في صفحة الدفع</p>`;
   };

@@ -500,3 +500,13 @@ input, select, textarea { font: inherit; color: inherit; }
   .hero-perks { gap: .9rem; }
   .search-results { grid-template-columns: 1fr; }
 }
+
+/* ships-from-abroad notices (product page, cart, checkout) */
+.origin-box { display: flex; gap: .75rem; align-items: flex-start; margin-top: 1rem; padding: .85rem 1rem; border-radius: 14px; background: #fff7ec; border: 1px solid #f0d9b5; color: #6b4a1f; font-size: .86rem; line-height: 1.6; }
+.origin-box svg { width: 22px; height: 22px; flex: none; margin-top: .1rem; color: #b07a2c; }
+.origin-box b { display: block; color: #4a3212; font-size: .92rem; }
+.origin-box span b { display: inline; font-size: inherit; white-space: nowrap; }
+.origin-note b { white-space: nowrap; }
+#originBox { margin: 0 0 1rem; }
+.origin-note { display: flex; gap: .45rem; align-items: flex-start; margin: .2rem 0 .8rem; padding: .6rem .75rem; border-radius: 10px; background: #fff7ec; color: #6b4a1f; font-size: .8rem; line-height: 1.55; }
+.origin-note svg { width: 16px; height: 16px; flex: none; margin-top: .15rem; color: #b07a2c; }

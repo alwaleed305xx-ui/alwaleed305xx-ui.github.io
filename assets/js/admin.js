@@ -437,7 +437,7 @@
     const draft = {
       id: nextId(), cat: catObj.id, type: catObj.type || 'maxi', name: '', price: roundPrice(Math.max(costSar * mult, costSar + 40)), old: 0, badge: 'new',
       sizeChart: onlyFree ? 'onesize' : (catObj.id === 'sport' ? 'sport' : 'women'), sizes, colors: [...colors].map(([name, hex]) => ({ name, hex })),
-      desc: '', details: [], fabric: '', care: '', images: p.images || [], colorImages, show: true,
+      desc: '', details: [], fabric: '', care: '', images: p.images || [], colorImages, show: true, shipsFrom: p.from || 'CN',
     };
     /* colour + size pairs CJ doesn't sell: the product page greys them out and checkout refuses them */
     const na = [];
@@ -491,6 +491,7 @@
     const na = [];
     prod.colors.forEach(c => prod.sizes.forEach(z => { if (!variants[c.name + '|' + z]) na.push(c.name + '|' + z); }));
     if (na.length) prod.na = na; else delete prod.na;
+    prod.shipsFrom = r.product.from || 'CN';
     const prev = suppliers[String(prod.id)] || {};
     suppliers[String(prod.id)] = Object.assign({}, prev, { supplier: 'CJ', ref: cjPid, variants, logistic: ship ? ship.name : '', from: r.product.from || 'CN', cost: costSar || prev.cost,
       notes: `${prev.notes ? prev.notes + ' | ' : ''}CJ ${cjPid}${prev.url ? ' (كان: ' + prev.url + ')' : ''}` });

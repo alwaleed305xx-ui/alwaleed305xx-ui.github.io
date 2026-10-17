@@ -39,7 +39,8 @@
       <section class="co-card">
         <h2><span class="step">2</span> طريقة الدفع</h2>
         <div class="pay-options" id="payOptions"></div>
-        <label class="check-row"><input type="checkbox" id="fAgree" required> <span>أوافق على مدة التوصيل المتوقعة (<b id="agreeDays"></b> يوم) وعلى <a href="policies.html#returns" target="_blank">سياسة الاستبدال والاسترجاع</a> و<a href="policies.html#privacy" target="_blank">سياسة الخصوصية</a> و<a href="policies.html#terms" target="_blank">الشروط</a>.</span></label>
+        <div class="origin-box" id="originBox"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" aria-hidden="true"><path d="M10.2 13.8 3 11.5l1.4-1.4 8.1.9 4.3-4.3c.8-.8 2.2-.9 2.9-.2s.6 2.1-.2 2.9l-4.3 4.3.9 8.1-1.4 1.4-2.3-7.2-3.4 3.1.3 2.4-1 1-1.3-3-3-1.3 1-1 2.4.3z"/></svg><div><b>قبل ما تدفعين: طلبك يُشحن من خارج السعودية</b><span>منتجاتنا تنشحن مباشرة من مستودعات الموردين بالخارج (أغلبها من الصين)، مو من مخزن داخل المملكة — عشان كذا التوصيل ياخذ <b><bdi dir="ltr" id="originDays"></bdi> يوم</b> ويوصلك رقم تتبّع دولي.</span></div></div>
+        <label class="check-row"><input type="checkbox" id="fAgree" required> <span>أعرف إن الطلب يُشحن من خارج السعودية، وأوافق على مدة التوصيل المتوقعة (<b id="agreeDays"></b> يوم) وعلى <a href="policies.html#returns" target="_blank">سياسة الاستبدال والاسترجاع</a> و<a href="policies.html#privacy" target="_blank">سياسة الخصوصية</a> و<a href="policies.html#terms" target="_blank">الشروط</a>.</span></label>
         <span class="err" data-err="agree" style="color:var(--err);font-size:.8rem"></span>
         <div id="formError" class="form-error" hidden role="alert"></div>
         <button class="btn btn-plum btn-block" id="placeBtn" type="submit" style="margin-top:1.2rem">إتمام الطلب</button>

@@ -58,7 +58,7 @@ Sora.ready(() => {
     ].filter(Boolean).join('');
   if (!payment || !backend) $('#placeBtn').disabled = true;
   $('#secureLine').innerHTML = `${I.lock} بياناتك محمية — ما نحفظ بيانات البطاقة`;
-  $('#agreeDays').textContent = S.shipWindow(lines);
+  $('#agreeDays').textContent = $('#originDays').textContent = S.shipWindow(lines);
   $('#payOptions').addEventListener('change', e => { if (e.target.name === 'pay') { payment = e.target.value; renderSummary(); } });
 
   /* cities */
@@ -91,7 +91,7 @@ Sora.ready(() => {
       ${t.codFee ? `<div class="sum-row"><span>رسوم الدفع عند الاستلام</span><span>${moneyText(t.codFee)}</span></div>` : ''}
       <div class="sum-row total"><span>الإجمالي</span><span>${moneyText(t.total)}</span></div>
       <p class="drawer-note">يوصلك خلال ${esc(S.shipWindow(lines))} يوم</p>`;
-    $('#agreeDays').textContent = S.shipWindow(lines);
+    $('#agreeDays').textContent = $('#originDays').textContent = S.shipWindow(lines);
     const btn = $('#couponBtn');
     if (btn) btn.addEventListener('click', () => {
       if (coupon && !t.couponError) { coupon = ''; LS.del(KEYS.coupon); }
