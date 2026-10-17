@@ -390,9 +390,11 @@
     const unique = rows.filter(r => { const k = r.color + '|' + r.size; if (seen.has(k)) { odd.push(r.raw + '-' + r.size + ' (مكرر)'); return false; } seen.add(k); return true; });
     rows.length = 0; rows.push(...unique);
     const maxDays = x => Number((String(x.days).match(/(\d+)\s*$/) || [])[1] || 99);
-    const lines = (p.shipping || []).slice().sort((a, b) => a.usd - b.usd);
+    /* a line's clearance fee is charged by CJ on top of postage */
+    const lineUsd = x => Math.max(Number(x.usd) || 0, Number(x.totalUsd) || 0);
+    const lines = (p.shipping || []).slice().sort((a, b) => lineUsd(a) - lineUsd(b));
     const ship = lines.find(x => maxDays(x) <= 25) || lines[0] || null;
-    return { rows, odd, ship, costSar: r2((maxUsd + (ship ? ship.usd : 0)) * 3.75) };
+    return { rows, odd, ship, costSar: r2((maxUsd + (ship ? lineUsd(ship) : 0)) * 3.75) };
   }
 
   async function importCj(pid, cat, btn) {

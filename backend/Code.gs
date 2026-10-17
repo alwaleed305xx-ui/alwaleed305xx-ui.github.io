@@ -684,8 +684,9 @@ function cjCall_(method, path, body, query) {
       if (body != null) { opts.contentType = 'application/json'; opts.payload = JSON.stringify(body); }
       res = UrlFetchApp.fetch(url, opts);
     } catch (err) {
-      last = { ok: false, http: 0, code: code_(err) === 'cj_auth_failed' ? 'auth' : 'network', data: null, message: code_(err), requestId: '' };
-      if (last.code === 'auth') break;
+      var ec = code_(err);
+      last = { ok: false, http: 0, code: ec === 'cj_auth_failed' ? 'auth' : ec === 'cj_not_configured' ? 'not_configured' : 'network', data: null, message: ec, requestId: '' };
+      if (last.code !== 'network') break;
       Utilities.sleep(1500 * (attempt + 1));
       continue;
     }
@@ -726,7 +727,8 @@ function cjPickLogistic_(options, preferred) {
   }
   var maxDays = function (x) { var m = String(x.logisticAging || '').match(/(\d+)\s*$/); return m ? Number(m[1]) : 99; };
   var fast = list.filter(function (x) { return maxDays(x) <= 25; });
-  return (fast.length ? fast : list).slice().sort(function (a, b) { return Number(a.logisticPrice) - Number(b.logisticPrice); })[0];
+  var price = function (x) { return Math.max(Number(x.logisticPrice) || 0, Number(x.totalPostageFee) || 0); };
+  return (fast.length ? fast : list).slice().sort(function (a, b) { return price(a) - price(b); })[0];
 }
 
 /* Places (and pays from the CJ wallet) the CJ part of a paid order. Safe to call again:
@@ -860,13 +862,14 @@ function placeCjOrders_(o, opts) {
          (their share of the order after coupon, plus the shipping fee she paid) */
       var sub = Number(o.subtotal) || 0;
       var paidSar = sub > 0 ? g.revenueSar * ((Number(o.total) || 0) - (Number(o.codFee) || 0)) / sub : g.revenueSar;
-      var costSar = (goodsUsd + (Number(opt.logisticPrice) || 0)) * USD_SAR;
+      var shipUsd = Math.max(Number(opt.logisticPrice) || 0, Number(opt.totalPostageFee) || 0);   // includes a clearance fee CJ adds
+      var costSar = (goodsUsd + shipUsd) * USD_SAR;
       if (paidSar > 0 && costSar > paidSar && !opts.force) { failure = 'margin_guard cost ' + round2_(costSar) + ' SAR > paid ' + round2_(paidSar) + ' SAR'; hold = true; return; }
       if (sandbox) {
         /* test mode is a dry run: CJ honours isSandbox only on special sandbox accounts (a normal account may treat
            it as a real order), so nothing is created at CJ — stock, shipping and the price check above are real */
         info.cj[from] = { orderNumber: number, orderId: 'TEST-' + number, logistic: opt.logisticName, days: String(opt.logisticAging || ''),
-          shipUsd: Number(opt.logisticPrice) || 0, amountUsd: round2_(goodsUsd + (Number(opt.logisticPrice) || 0)), status: 'TEST', test: true, paid: true,
+          shipUsd: shipUsd, amountUsd: round2_(goodsUsd + shipUsd), status: 'TEST', test: true, paid: true,
           vids: g.products.map(function (p) { return p.vid; }) };
         saveCjProgress_(o.orderId, info.cj);
         return;
